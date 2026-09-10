@@ -1,0 +1,96 @@
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Lock } from "lucide-react";
+import type { BrandId } from "@/types";
+import { brandsById, isBrandId } from "@/data/brands";
+import { useAppState } from "@/components/providers/AppStateProvider";
+import { getBrandSummary } from "@/lib/analytics";
+import { canViewBrand, canViewPlatform, isManager } from "@/lib/permissions";
+import { BrandHeader } from "@/components/brands/BrandHeader";
+import { BrandPlatformTab } from "@/components/brands/BrandPlatformTab";
+import { BrandCreativesTab, BrandOverviewTab, BrandReportsTab, BrandSalesTab, BrandTargetsTab, BrandTasksTab } from "@/components/brands/BrandTabs";
+import { EmptyState } from "@/components/shared/States";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+const TABS = ["overview", "meta", "google", "sales", "targets", "tasks", "creatives", "reports"] as const;
+type TabKey = (typeof TABS)[number];
+
+export function BrandDetail({ brandId }: { brandId: string }) {
+  const { currentUser, targets } = useAppState();
+  const router = useRouter();
+  const params = useSearchParams();
+  const requested = params.get("tab");
+
+  if (!isBrandId(brandId)) {
+    return (
+      <EmptyState
+        title="Brand not found"
+        description="This brand doesn't exist in the demo data."
+        action={<Button asChild variant="outline" size="sm"><Link href="/brands">Back to brands</Link></Button>}
+      />
+    );
+  }
+  if (!canViewBrand(currentUser, brandId)) {
+    return (
+      <EmptyState
+        icon={Lock}
+        title={`${brandsById[brandId].name} isn't one of your brands`}
+        description={`${currentUser.name} only has access to their own brands. Switch user from the top-right to view it as a manager.`}
+        action={<Button asChild variant="outline" size="sm"><Link href="/brands">My Brands</Link></Button>}
+      />
+    );
+  }
+
+  const summary = getBrandSummary(brandId as BrandId, targets);
+  const manager = isManager(currentUser);
+  const allowed = TABS.filter((t) => {
+    if (t === "meta") return canViewPlatform(currentUser, "meta");
+    if (t === "google") return canViewPlatform(currentUser, "google");
+    return true;
+  });
+  const tab: TabKey = requested && (allowed as readonly string[]).includes(requested) ? (requested as TabKey) : "overview";
+
+  const setTab = (next: string) => {
+    const search = new URLSearchParams(params.toString());
+    if (next === "overview") search.delete("tab");
+    else search.set("tab", next);
+    const qs = search.toString();
+    router.replace(`/brands/${brandId}${qs ? `?${qs}` : ""}`, { scroll: false });
+  };
+
+  const labels: Record<TabKey, string> = {
+    overview: "Overview",
+    meta: "Meta",
+    google: "Google",
+    sales: "Sales",
+    targets: "Targets",
+    tasks: "Tasks",
+    creatives: "Creatives",
+    reports: "Reports",
+  };
+
+  return (
+    <div className="space-y-6">
+      <BrandHeader summary={summary} showOwners={manager || true} />
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList className="w-full justify-start sm:w-auto">
+          {allowed.map((t) => (
+            <TabsTrigger key={t} value={t}>{labels[t]}</TabsTrigger>
+          ))}
+        </TabsList>
+        <TabsContent value="overview"><BrandOverviewTab summary={summary} /></TabsContent>
+        {allowed.includes("meta") && <TabsContent value="meta"><BrandPlatformTab summary={summary} platform="meta" /></TabsContent>}
+        {allowed.includes("google") && <TabsContent value="google"><BrandPlatformTab summary={summary} platform="google" /></TabsContent>}
+        <TabsContent value="sales"><BrandSalesTab summary={summary} /></TabsContent>
+        <TabsContent value="targets"><BrandTargetsTab summary={summary} /></TabsContent>
+        <TabsContent value="tasks"><BrandTasksTab summary={summary} /></TabsContent>
+        <TabsContent value="creatives"><BrandCreativesTab summary={summary} /></TabsContent>
+        <TabsContent value="reports"><BrandReportsTab summary={summary} /></TabsContent>
+      </Tabs>
+    </div>
+  );
+}
