@@ -3,7 +3,7 @@
 import * as React from "react";
 import type { BrandId, Task, User, UserId } from "@/types";
 import { usersById } from "@/data/users";
-import { getUserServerSnapshot, getUserSnapshot, setStoredUserId, subscribeUser } from "@/lib/userStore";
+import { getSessionServerSnapshot, getSessionSnapshot, getUserServerSnapshot, getUserSnapshot, loginAs, logout as logoutStore, setStoredUserId, subscribeUser, type SessionState } from "@/lib/userStore";
 import { initialTasks } from "@/data/tasks";
 import { initialTargetMap, type TargetMap } from "@/data/targets";
 import { DEMO_TODAY } from "@/data/config";
@@ -24,6 +24,10 @@ export type NewTaskInput = Omit<Task, "id" | "createdAt" | "completedAt">;
 interface AppState {
   currentUser: User;
   setCurrentUserId: (id: UserId) => void;
+  /** Demo session: "unknown" before hydration, then "in" or "out". */
+  session: SessionState;
+  login: (id: UserId) => void;
+  logout: () => void;
   tasks: Task[];
   addTask: (input: NewTaskInput) => Task;
   updateTask: (id: string, patch: Partial<Task>) => void;
@@ -39,6 +43,9 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   // Persisted across refreshes (demo convenience only).
   const currentUserId = React.useSyncExternalStore(subscribeUser, getUserSnapshot, getUserServerSnapshot);
   const setCurrentUserId = React.useCallback((id: UserId) => setStoredUserId(id), []);
+  const session = React.useSyncExternalStore(subscribeUser, getSessionSnapshot, getSessionServerSnapshot);
+  const login = React.useCallback((id: UserId) => loginAs(id), []);
+  const logout = React.useCallback(() => logoutStore(), []);
   const [tasks, setTasks] = React.useState<Task[]>(initialTasks);
   const [targets, setTargets] = React.useState<TargetMap>(initialTargetMap);
   const counter = React.useRef(100);
@@ -75,6 +82,9 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     () => ({
       currentUser: usersById[currentUserId],
       setCurrentUserId,
+      session,
+      login,
+      logout,
       tasks,
       addTask,
       updateTask,
@@ -83,7 +93,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       setTarget,
       today: DEMO_TODAY,
     }),
-    [currentUserId, setCurrentUserId, tasks, addTask, updateTask, completeTask, targets, setTarget],
+    [currentUserId, setCurrentUserId, session, login, logout, tasks, addTask, updateTask, completeTask, targets, setTarget],
   );
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

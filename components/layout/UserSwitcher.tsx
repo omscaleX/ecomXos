@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { users } from "@/data/users";
 import { useAppState } from "@/components/providers/AppStateProvider";
 import { UserAvatar } from "@/components/shared/UserAvatar";
@@ -20,7 +21,8 @@ import { cn } from "@/lib/utils";
  * brands, tasks and AI context. This is frontend state only – no login.
  */
 export function UserSwitcher() {
-  const { currentUser, setCurrentUserId } = useAppState();
+  const { currentUser, setCurrentUserId, logout } = useAppState();
+  const router = useRouter();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -50,6 +52,15 @@ export function UserSwitcher() {
             {u.id === currentUser.id && <Check className="size-4" />}
           </DropdownMenuItem>
         ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={() => {
+            logout();
+            router.replace("/login");
+          }}
+        >
+          <LogOut /> Log out
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

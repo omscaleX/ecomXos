@@ -16,7 +16,7 @@ import { BrandTargetPanel } from "@/components/charts/TargetRing";
 import { TARGET_STATUS_LABEL } from "@/lib/formatters";
 
 /** Brand page header: owners + the five business metric cards. */
-export function BrandHeader({ summary: s, showOwners = true }: { summary: BrandSummary; showOwners?: boolean }) {
+export function BrandHeader({ summary: s, showOwners = true, compact = false }: { summary: BrandSummary; showOwners?: boolean; compact?: boolean }) {
   const owners = [
     { label: "Manager", user: usersById[s.brand.managerId] },
     { label: "Meta", user: usersById[s.brand.metaOwnerId] },
@@ -61,6 +61,7 @@ export function BrandHeader({ summary: s, showOwners = true }: { summary: BrandS
         )}
       </PageHeader>
 
+      {!compact && (
       <div className="grid gap-3 lg:grid-cols-5">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:col-span-3">
           <MetricCard label="Total Ad Spend" value={formatCurrency(s.totalSpend, s.currency)} source={SOURCE.totalSpend} hint={`Meta ${formatCurrency(s.metaSpend, s.currency)} + Google ${formatCurrency(s.googleSpend, s.currency)}`} />
@@ -71,6 +72,7 @@ export function BrandHeader({ summary: s, showOwners = true }: { summary: BrandS
           <BrandTargetPanel summary={s} />
         </div>
       </div>
+      )}
     </div>
   );
 }

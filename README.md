@@ -26,9 +26,9 @@ npx tsc --noEmit   # types
 npm run lint       # eslint
 ```
 
-## Demo users
+## Demo login and users
 
-Use the switcher in the top-right. No login is required.
+The app opens on a dummy login screen (`/login`) with four roles: Senior Manager, Manager, Meta Ads and Google Ads. Pick a role (and a person for Meta Ads), then continue. No password is checked. The session is remembered in `localStorage`; use "Log out" in the top-right menu to return to the login screen. Once signed in, the top-right switcher can still jump between users for the demo.
 
 | User    | Role                          | Sees                                                        |
 | ------- | ----------------------------- | ----------------------------------------------------------- |
