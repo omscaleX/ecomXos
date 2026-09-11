@@ -9,11 +9,12 @@ import { useAppState } from "@/components/providers/AppStateProvider";
 import { getDailyBusinessSeries, getShopifyTotals } from "@/lib/analytics";
 import { getVisiblePlatforms, getVisibleTasks, isManager } from "@/lib/permissions";
 import { getTaskCounts, sortTasks } from "@/lib/tasks";
-import { formatCurrency, formatGap, formatNumber, formatPercent, formatROAS, TARGET_STATUS_LABEL } from "@/lib/formatters";
+import { formatCurrency, formatCurrencyCompact, formatGap, formatNumber, formatPercent, formatROAS, TARGET_STATUS_LABEL } from "@/lib/formatters";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { SOURCE } from "@/components/shared/SourceLabel";
-import { SpendRevenueChart } from "@/components/charts/SpendRevenueChart";
-import { SpendTrendChart } from "@/components/charts/SpendTrendChart";
+import { DonutChart } from "@/components/charts/DonutChart";
+import { TargetRing } from "@/components/charts/TargetRing";
+import { CHART_COLORS } from "@/components/charts/chartConfig";
 import { SalesTrendChart } from "@/components/charts/SalesTrendChart";
 import { TargetProgress } from "@/components/targets/TargetTable";
 import { EditTargetModal } from "@/components/targets/EditTargetModal";
@@ -31,63 +32,65 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export function BrandOverviewTab({ summary: s }: { summary: BrandSummary }) {
   const { currentUser } = useAppState();
   const platforms = getVisiblePlatforms(currentUser);
-  const series = getDailyBusinessSeries([s.brand.id], "30d");
+  const spendSlices = [
+    { name: "Meta Spend", value: s.metaSpend, color: CHART_COLORS.meta, label: formatCurrency(s.metaSpend, s.currency) },
+    { name: "Google Spend", value: s.googleSpend, color: CHART_COLORS.google, label: formatCurrency(s.googleSpend, s.currency) },
+  ];
   return (
-    <div className="space-y-4">
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Ad Spend vs Shopify Net Sales</CardTitle>
-            <CardDescription>Daily · last 30 days · compares the two numbers, does not imply causation.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <SpendRevenueChart data={series} currency={s.currency} />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Business Performance</CardTitle>
-            <CardDescription>Meta and Google shown separately; Shopify is the sales source.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <dl className="space-y-3 text-sm">
-              <div className="rounded-md border p-3">
-                <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Meta performance</p>
-                <Row label="Meta Spend" value={formatCurrency(s.metaSpend, s.currency)} />
-                {platforms.includes("meta") && (
-                  <>
-                    <Row label="Meta Purchases" value={formatNumber(s.meta.purchases)} />
-                    <Row label="Meta Reported Purchase Value" value={formatCurrency(s.meta.reportedPurchaseValue, s.currency)} muted />
-                  </>
-                )}
-              </div>
-              <div className="rounded-md border p-3">
-                <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Google performance</p>
-                <Row label="Google Spend" value={formatCurrency(s.googleSpend, s.currency)} />
-                {platforms.includes("google") && (
-                  <>
-                    <Row label="Google Conversions" value={formatNumber(s.google.conversions)} />
-                    <Row label="Google Conversion Value" value={formatCurrency(s.google.conversionValue, s.currency)} muted />
-                  </>
-                )}
-              </div>
-              <div className="rounded-md border bg-muted/40 p-3">
-                <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Business performance</p>
-                <Row label="Total Ad Spend" value={formatCurrency(s.totalSpend, s.currency)} />
-                <Row label="Shopify Net Sales" value={formatCurrency(s.netSales, s.currency)} />
-                <Row label="Actual ROAS" value={formatROAS(s.actualROAS)} strong />
-              </div>
-            </dl>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="grid gap-4 lg:grid-cols-3">
       <Card>
         <CardHeader>
-          <CardTitle>Ad Spend Trend</CardTitle>
-          <CardDescription>{platforms.length === 2 ? "Meta Spend, Google Spend and Total Spend." : `${platforms[0] === "meta" ? "Meta" : "Google"} Spend and Total Spend.`}</CardDescription>
+          <CardTitle>Target vs Actual ROAS</CardTitle>
+          <CardDescription>Actual ROAS = Shopify Net Sales ÷ Total Ad Spend · last 30 days.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-center">
+          <TargetRing actual={s.actualROAS} target={s.targetROAS} status={s.status} gap={s.gap} gapPercent={s.gapPercent} size={160} />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Ad Spend by Platform</CardTitle>
+          <CardDescription>Meta + Google = Total Ad Spend {formatCurrency(s.totalSpend, s.currency)}.</CardDescription>
         </CardHeader>
         <CardContent>
-          <SpendTrendChart data={series} currency={s.currency} platforms={platforms} />
+          <DonutChart slices={spendSlices} centerValue={formatCurrencyCompact(s.totalSpend, s.currency)} centerLabel="Total Ad Spend" size={150} />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Business Performance</CardTitle>
+          <CardDescription>Meta and Google shown separately; Shopify is the sales source.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <dl className="space-y-3 text-sm">
+            <div className="rounded-md border p-3">
+              <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Meta performance</p>
+              <Row label="Meta Spend" value={formatCurrency(s.metaSpend, s.currency)} />
+              {platforms.includes("meta") && (
+                <>
+                  <Row label="Meta Purchases" value={formatNumber(s.meta.purchases)} />
+                  <Row label="Meta Reported Purchase Value" value={formatCurrency(s.meta.reportedPurchaseValue, s.currency)} muted />
+                </>
+              )}
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Google performance</p>
+              <Row label="Google Spend" value={formatCurrency(s.googleSpend, s.currency)} />
+              {platforms.includes("google") && (
+                <>
+                  <Row label="Google Conversions" value={formatNumber(s.google.conversions)} />
+                  <Row label="Google Conversion Value" value={formatCurrency(s.google.conversionValue, s.currency)} muted />
+                </>
+              )}
+            </div>
+            <div className="rounded-md border bg-muted/40 p-3">
+              <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Business performance</p>
+              <Row label="Total Ad Spend" value={formatCurrency(s.totalSpend, s.currency)} />
+              <Row label="Shopify Net Sales" value={formatCurrency(s.netSales, s.currency)} />
+              <Row label="Actual ROAS" value={formatROAS(s.actualROAS)} strong />
+              <Row label="Target" value={formatROAS(s.targetROAS)} />
+            </div>
+          </dl>
         </CardContent>
       </Card>
     </div>
@@ -153,6 +156,9 @@ export function BrandTargetsTab({ summary: s }: { summary: BrandSummary }) {
           <CardAction>{manager && <Button variant="outline" size="sm" onClick={() => setOpen(true)}>Edit Target</Button>}</CardAction>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex justify-center">
+            <TargetRing actual={s.actualROAS} target={s.targetROAS} status={s.status} gap={s.gap} gapPercent={s.gapPercent} size={150} />
+          </div>
           <div className="grid grid-cols-3 gap-3">
             <div><p className="text-[11px] text-muted-foreground">Actual ROAS</p><p className="tabular text-2xl font-semibold">{formatROAS(s.actualROAS)}</p></div>
             <div><p className="text-[11px] text-muted-foreground">Target</p><p className="tabular text-2xl font-semibold text-muted-foreground">{formatROAS(s.targetROAS)}</p></div>

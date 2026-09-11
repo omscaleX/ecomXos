@@ -16,6 +16,7 @@ import { QuickActions } from "@/components/dashboard/QuickActions";
 import { TargetTable } from "@/components/targets/TargetTable";
 import { EditTargetModal } from "@/components/targets/EditTargetModal";
 import { AIInsightCard } from "@/components/ai/AIInsightCard";
+import { TargetOverview } from "@/components/charts/TargetRing";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { BrandId } from "@/types";
@@ -52,6 +53,19 @@ export function ManagerDashboard() {
         </Card>
         <AIInsightCard brandIds={brandIds} tasks={tasks} scopeLabel="All brands" />
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Target vs Actual ROAS</CardTitle>
+          <CardDescription>Each ring fills to Actual ÷ Target. The line under each brand says exactly how far it is from its target.</CardDescription>
+          <CardAction>
+            <Button variant="ghost" size="sm" asChild><Link href="/targets">All targets</Link></Button>
+          </CardAction>
+        </CardHeader>
+        <CardContent>
+          <TargetOverview summaries={summaries} />
+        </CardContent>
+      </Card>
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">

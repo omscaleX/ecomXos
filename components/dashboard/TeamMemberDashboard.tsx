@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useAppState } from "@/components/providers/AppStateProvider";
-import { getBrandSummaries, getDailyBusinessSeries, getDailyMetaSeries, getDailyGoogleSeries, getPortfolios } from "@/lib/analytics";
+import { getBrandSummaries, getPortfolios } from "@/lib/analytics";
 import { getVisibleBrands, getVisibleTasks } from "@/lib/permissions";
 import { generateAgencySummary } from "@/lib/agency";
 import { formatCurrency, formatCurrencyCompact, formatNumber, formatPercent, formatROAS } from "@/lib/formatters";
@@ -14,9 +14,10 @@ import { PriorityList } from "@/components/dashboard/PriorityList";
 import { TaskSummary } from "@/components/dashboard/TaskSummary";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { AIInsightCard } from "@/components/ai/AIInsightCard";
-import { ROASChart } from "@/components/charts/ROASChart";
-import { PlatformTrendChart } from "@/components/charts/PlatformTrendChart";
-import { SpendRevenueChart } from "@/components/charts/SpendRevenueChart";
+import { DonutChart } from "@/components/charts/DonutChart";
+import { SLICE_COLORS } from "@/components/charts/DonutChart";
+import { TargetOverview } from "@/components/charts/TargetRing";
+import { salesByBrandSlices } from "@/components/charts/pieData";
 import { SOURCE } from "@/components/shared/SourceLabel";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,10 +36,13 @@ export function TeamMemberDashboard() {
   const summaries = getBrandSummaries(myBrandIds, targets);
   const agency = generateAgencySummary(myBrandIds, targets, myTasks, { today, teamUserIds: [currentUser.id], platform });
   const portfolios = getPortfolios(summaries);
-  const inrIds = myBrands.filter((b) => b.currency === "INR").map((b) => b.id);
-  const platformSeries = isMeta ? getDailyMetaSeries(inrIds, "30d") : getDailyGoogleSeries(inrIds, "30d");
-  const businessSeries = getDailyBusinessSeries(inrIds, "30d");
   const inr = summaries.filter((s) => s.currency === "INR");
+  const platformSpendByBrandSlices = inr.map((s, i) => ({
+    name: s.brand.name,
+    value: isMeta ? s.metaSpend : s.googleSpend,
+    color: SLICE_COLORS[i % SLICE_COLORS.length],
+    label: formatCurrency(isMeta ? s.metaSpend : s.googleSpend, "INR"),
+  }));
   const inrTotals = {
     spend: inr.reduce((a, s) => a + (isMeta ? s.metaSpend : s.googleSpend), 0),
     clicks: inr.reduce((a, s) => a + (isMeta ? s.meta.clicks : s.google.clicks), 0),
@@ -86,6 +90,16 @@ export function TeamMemberDashboard() {
         <AIInsightCard brandIds={myBrandIds} tasks={myTasks} scopeLabel="My brands" />
       </div>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Target vs Actual ROAS</CardTitle>
+          <CardDescription>Each ring fills to Actual ÷ Target. The line under each brand says exactly how far it is from its target.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <TargetOverview summaries={summaries} columns={myBrands.length > 3 ? 6 : 3} />
+        </CardContent>
+      </Card>
+
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
@@ -120,13 +134,13 @@ export function TeamMemberDashboard() {
             <MetricCard label="Orders" value={formatNumber(inrTotals.orders)} source={SOURCE.orders} />
           </div>
           <div className="grid gap-4 lg:grid-cols-2">
-            <div>
-              <p className="mb-2 text-xs font-medium text-muted-foreground">{platformLabel} Spend Trend · INR</p>
-              <PlatformTrendChart data={platformSeries} platform={platform} currency="INR" />
+            <div className="rounded-lg border p-4">
+              <p className="mb-2 text-xs font-medium text-muted-foreground">{platformLabel} Spend by Brand · INR</p>
+              <DonutChart slices={platformSpendByBrandSlices} centerValue={formatCurrencyCompact(inrTotals.spend, "INR")} centerLabel={`${platformLabel} Spend`} size={150} />
             </div>
-            <div>
-              <p className="mb-2 text-xs font-medium text-muted-foreground">Actual ROAS by Brand</p>
-              <ROASChart summaries={summaries} />
+            <div className="rounded-lg border p-4">
+              <p className="mb-2 text-xs font-medium text-muted-foreground">Shopify Net Sales by Brand · INR</p>
+              <DonutChart slices={salesByBrandSlices(summaries, "INR")} centerValue={formatCurrencyCompact(portfolios.find((p) => p.currency === "INR")?.netSales ?? 0, "INR")} centerLabel="Net Sales" size={150} />
             </div>
           </div>
           <div>
@@ -164,16 +178,6 @@ export function TeamMemberDashboard() {
               </TableBody>
             </Table>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Ad Spend vs Shopify Net Sales</CardTitle>
-          <CardDescription>My India brands (INR) · total brand ad spend · does not imply causation.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <SpendRevenueChart data={businessSeries} currency="INR" />
         </CardContent>
       </Card>
 

@@ -12,6 +12,7 @@ import { BrandMark } from "@/components/shared/BrandMark";
 import { UserAvatar } from "@/components/shared/UserAvatar";
 import { SOURCE } from "@/components/shared/SourceLabel";
 import { QuickActions } from "@/components/dashboard/QuickActions";
+import { BrandTargetPanel } from "@/components/charts/TargetRing";
 import { TARGET_STATUS_LABEL } from "@/lib/formatters";
 
 /** Brand page header: owners + the five business metric cards. */
@@ -60,12 +61,15 @@ export function BrandHeader({ summary: s, showOwners = true }: { summary: BrandS
         )}
       </PageHeader>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-        <MetricCard label="Total Ad Spend" value={formatCurrency(s.totalSpend, s.currency)} source={SOURCE.totalSpend} hint={`Meta ${formatCurrency(s.metaSpend, s.currency)} + Google ${formatCurrency(s.googleSpend, s.currency)}`} />
-        <MetricCard label="Shopify Net Sales" value={formatCurrency(s.netSales, s.currency)} source={SOURCE.shopify} hint={`${s.orders} orders`} />
-        <MetricCard label="Actual ROAS" value={formatROAS(s.actualROAS)} source={SOURCE.actualROAS} tone={tone} />
-        <MetricCard label="Target" value={formatROAS(s.targetROAS)} source={SOURCE.target} />
-        <MetricCard label="Status" value={TARGET_STATUS_LABEL[s.status]} tone={tone} source={`Gap ${s.gap >= 0 ? "+" : "-"}${Math.abs(s.gap).toFixed(2)} · ${Math.round(Math.abs(s.gapPercent) * 100)}% ${s.gap >= 0 ? "above" : "below"} target`} />
+      <div className="grid gap-3 lg:grid-cols-5">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:col-span-3">
+          <MetricCard label="Total Ad Spend" value={formatCurrency(s.totalSpend, s.currency)} source={SOURCE.totalSpend} hint={`Meta ${formatCurrency(s.metaSpend, s.currency)} + Google ${formatCurrency(s.googleSpend, s.currency)}`} />
+          <MetricCard label="Shopify Net Sales" value={formatCurrency(s.netSales, s.currency)} source={SOURCE.shopify} hint={`${s.orders} orders`} />
+          <MetricCard label="Actual ROAS" value={formatROAS(s.actualROAS)} source={SOURCE.actualROAS} tone={tone} secondary={`Target ${formatROAS(s.targetROAS)} · ${TARGET_STATUS_LABEL[s.status]}`} />
+        </div>
+        <div className="lg:col-span-2">
+          <BrandTargetPanel summary={s} />
+        </div>
       </div>
     </div>
   );

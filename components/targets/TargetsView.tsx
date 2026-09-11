@@ -11,7 +11,10 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { TargetTable } from "@/components/targets/TargetTable";
 import { EditTargetModal } from "@/components/targets/EditTargetModal";
-import { ROASChart } from "@/components/charts/ROASChart";
+import { DonutChart } from "@/components/charts/DonutChart";
+import { TargetOverview } from "@/components/charts/TargetRing";
+import { statusSlices } from "@/components/charts/pieData";
+import { TargetStatusBadge } from "@/components/shared/StatusBadge";
 import { AskAIButton } from "@/components/ai/AskAIButton";
 import { SOURCE } from "@/components/shared/SourceLabel";
 import { Button } from "@/components/ui/button";
@@ -55,6 +58,16 @@ export function TargetsView() {
 
       <Card>
         <CardHeader>
+          <CardTitle>Target vs Actual ROAS</CardTitle>
+          <CardDescription>Each ring fills to Actual ÷ Target. The line under each brand says exactly how far it is from its target.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <TargetOverview summaries={summaries} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Target Tracking</CardTitle>
           <CardDescription>{manager ? "Click the pencil to change a target. Changes update every dashboard and the AI." : "Targets are set by managers."}</CardDescription>
         </CardHeader>
@@ -63,15 +76,30 @@ export function TargetsView() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Actual ROAS by Brand</CardTitle>
-          <CardDescription>Bars are coloured by status; dashed lines are the target markers.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ROASChart summaries={summaries} />
-        </CardContent>
-      </Card>
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Brands by Status</CardTitle>
+            <CardDescription>How many brands are on track, need attention or are below target.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DonutChart slices={statusSlices(summaries)} centerValue={String(summaries.length)} centerLabel="brands" size={150} />
+          </CardContent>
+        </Card>
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Status rules</CardTitle>
+            <CardDescription>Shared calculateTargetStatus() used on every page and by Agency AI.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm">
+              <li className="flex items-center justify-between rounded-md border px-3 py-2"><span>Actual ROAS is at or above the target</span><TargetStatusBadge status="on_track" /></li>
+              <li className="flex items-center justify-between rounded-md border px-3 py-2"><span>Actual ROAS is below target but at least 80% of it</span><TargetStatusBadge status="attention" /></li>
+              <li className="flex items-center justify-between rounded-md border px-3 py-2"><span>Actual ROAS is less than 80% of the target</span><TargetStatusBadge status="below_target" /></li>
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
 
       {manager && (
         <EditTargetModal

@@ -14,9 +14,10 @@ import { SOURCE } from "@/components/shared/SourceLabel";
 import { TargetStatusBadge } from "@/components/shared/StatusBadge";
 import { BrandChip } from "@/components/shared/BrandMark";
 import { EmptyState } from "@/components/shared/States";
-import { SpendRevenueChart } from "@/components/charts/SpendRevenueChart";
 import { SpendTrendChart } from "@/components/charts/SpendTrendChart";
-import { ROASChart } from "@/components/charts/ROASChart";
+import { DonutChart } from "@/components/charts/DonutChart";
+import { TargetOverview } from "@/components/charts/TargetRing";
+import { ordersByBrandSlices, salesByBrandSlices, spendByBrandSlices, spendByPlatformSlices } from "@/components/charts/pieData";
 import { PlatformTrendChart } from "@/components/charts/PlatformTrendChart";
 import { SalesTrendChart } from "@/components/charts/SalesTrendChart";
 import { AskAIButton } from "@/components/ai/AskAIButton";
@@ -170,23 +171,41 @@ function BusinessSection({
           </div>
         ))}
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
+      <Card>
+        <CardHeader>
+          <CardTitle>Target vs Actual ROAS</CardTitle>
+          <CardDescription>Shopify Net Sales ÷ Total Ad Spend for {DATE_RANGE_LABEL[range].toLowerCase()}, against each brand&apos;s target.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <TargetOverview summaries={summaries} />
+        </CardContent>
+      </Card>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle>{showTrend ? "Shopify Net Sales Trend" : "Ad Spend vs Shopify Net Sales"}</CardTitle>
-            <CardDescription>{currency === "INR" ? "INR brands" : "AED"} · {DATE_RANGE_LABEL[range]} · does not imply causation.</CardDescription>
+            <CardTitle>{showTrend ? "Shopify Net Sales by Brand" : "Ad Spend by Platform"}</CardTitle>
+            <CardDescription>{currency === "INR" ? "INR brands" : "AED"} · {DATE_RANGE_LABEL[range]}.</CardDescription>
           </CardHeader>
           <CardContent>
-            {showTrend ? <SalesTrendChart data={series} currency={currency} /> : <SpendRevenueChart data={series} currency={currency} />}
+            <DonutChart slices={showTrend ? salesByBrandSlices(summaries, currency) : spendByPlatformSlices(summaries, currency)} size={150} />
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Actual ROAS by Brand</CardTitle>
-            <CardDescription>Shopify Net Sales ÷ Total Ad Spend for {DATE_RANGE_LABEL[range].toLowerCase()}, vs 30-day target.</CardDescription>
+            <CardTitle>{showTrend ? "Orders by Brand" : "Ad Spend by Brand"}</CardTitle>
+            <CardDescription>{currency === "INR" ? "INR brands" : "AED"} · {DATE_RANGE_LABEL[range]}.</CardDescription>
           </CardHeader>
           <CardContent>
-            <ROASChart summaries={summaries} />
+            <DonutChart slices={showTrend ? ordersByBrandSlices(summaries, currency) : spendByBrandSlices(summaries, currency)} size={150} />
+          </CardContent>
+        </Card>
+        <Card className="md:col-span-2 xl:col-span-1">
+          <CardHeader>
+            <CardTitle>{showTrend ? "Shopify Net Sales Trend" : "Shopify Net Sales by Brand"}</CardTitle>
+            <CardDescription>{currency === "INR" ? "INR brands" : "AED"} · {DATE_RANGE_LABEL[range]}.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {showTrend ? <SalesTrendChart data={series} currency={currency} height={200} /> : <DonutChart slices={salesByBrandSlices(summaries, currency)} size={150} />}
           </CardContent>
         </Card>
       </div>

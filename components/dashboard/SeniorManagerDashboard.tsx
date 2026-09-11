@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useAppState } from "@/components/providers/AppStateProvider";
-import { brandIds, brands } from "@/data/brands";
-import { getBrandSummaries, getDailyBusinessSeries } from "@/lib/analytics";
+import { brandIds } from "@/data/brands";
+import { getBrandSummaries, getPortfolioSummary } from "@/lib/analytics";
+import { formatCurrency, formatCurrencyCompact, formatROAS } from "@/lib/formatters";
 import { generateAgencySummary } from "@/lib/agency";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PortfolioMetrics } from "@/components/dashboard/PortfolioMetrics";
@@ -13,8 +14,9 @@ import { TeamWorkloadCards } from "@/components/dashboard/TeamWorkload";
 import { TaskSummary } from "@/components/dashboard/TaskSummary";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { AIInsightCard } from "@/components/ai/AIInsightCard";
-import { SpendRevenueChart } from "@/components/charts/SpendRevenueChart";
-import { ROASChart } from "@/components/charts/ROASChart";
+import { DonutChart } from "@/components/charts/DonutChart";
+import { TargetOverview } from "@/components/charts/TargetRing";
+import { salesByBrandSlices, spendByBrandSlices, spendByPlatformSlices, statusSlices } from "@/components/charts/pieData";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -23,8 +25,8 @@ export function SeniorManagerDashboard() {
   const { currentUser, targets, tasks, today } = useAppState();
   const summaries = getBrandSummaries(brandIds, targets);
   const agency = generateAgencySummary(brandIds, targets, tasks, { today });
-  const inrBrandIds = brands.filter((b) => b.currency === "INR").map((b) => b.id);
-  const series = getDailyBusinessSeries(inrBrandIds, "30d");
+  const inrPortfolio = getPortfolioSummary(summaries, "INR");
+  const aedPortfolio = summaries.some((x) => x.currency === "AED") ? getPortfolioSummary(summaries, "AED") : undefined;
 
   return (
     <div className="space-y-6">
@@ -62,26 +64,60 @@ export function SeniorManagerDashboard() {
         <AIInsightCard brandIds={brandIds} tasks={tasks} scopeLabel="Agency" />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <Card>
+        <CardHeader>
+          <CardTitle>Target vs Actual ROAS</CardTitle>
+          <CardDescription>Each ring fills to Actual ÷ Target. The line under each brand says exactly how far it is from its target.</CardDescription>
+          <CardAction>
+            <Button variant="ghost" size="sm" asChild><Link href="/targets">All targets</Link></Button>
+          </CardAction>
+        </CardHeader>
+        <CardContent>
+          <TargetOverview summaries={summaries} />
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardHeader>
-            <CardTitle>Ad Spend vs Shopify Net Sales</CardTitle>
-            <CardDescription>India Portfolio (INR) · daily · compares the two numbers, does not imply causation.</CardDescription>
+            <CardTitle>Brands by Status</CardTitle>
+            <CardDescription>All 6 brands against their ROAS target.</CardDescription>
           </CardHeader>
           <CardContent>
-            <SpendRevenueChart data={series} currency="INR" />
+            <DonutChart slices={statusSlices(summaries)} centerValue={String(summaries.length)} centerLabel="brands" size={150} />
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Actual ROAS by Brand</CardTitle>
-            <CardDescription>Shopify Net Sales ÷ Total Ad Spend, with target markers.</CardDescription>
+            <CardTitle>Ad Spend by Platform</CardTitle>
+            <CardDescription>India brands (INR) · Meta + Google = Total Ad Spend.</CardDescription>
           </CardHeader>
           <CardContent>
-            <ROASChart summaries={summaries} />
+            <DonutChart slices={spendByPlatformSlices(summaries, "INR")} centerValue={formatCurrencyCompact(inrPortfolio.totalSpend, "INR")} centerLabel="Total Ad Spend" size={150} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Ad Spend by Brand</CardTitle>
+            <CardDescription>India brands (INR) · share of total ad spend.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DonutChart slices={spendByBrandSlices(summaries, "INR")} centerValue={formatCurrencyCompact(inrPortfolio.totalSpend, "INR")} centerLabel="Ad Spend" size={150} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Shopify Net Sales by Brand</CardTitle>
+            <CardDescription>India brands (INR) · share of Shopify Net Sales.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DonutChart slices={salesByBrandSlices(summaries, "INR")} centerValue={formatCurrencyCompact(inrPortfolio.netSales, "INR")} centerLabel="Net Sales" size={150} />
           </CardContent>
         </Card>
       </div>
+      <p className="-mt-2 text-xs text-muted-foreground">
+        DesiVidesi - Dubai is in AED and is not included in the INR pies: AED {formatCurrency(aedPortfolio?.totalSpend ?? 0, "AED").replace("AED ", "")} ad spend, {formatCurrency(aedPortfolio?.netSales ?? 0, "AED")} Shopify Net Sales, Actual ROAS {formatROAS(aedPortfolio?.actualROAS ?? 0)}.
+      </p>
 
       <Card>
         <CardHeader>

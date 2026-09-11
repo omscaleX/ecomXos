@@ -8,6 +8,7 @@ import { formatCurrency, formatROAS } from "@/lib/formatters";
 import { TargetStatusBadge } from "@/components/shared/StatusBadge";
 import { BrandMark } from "@/components/shared/BrandMark";
 import { TargetProgress } from "@/components/targets/TargetTable";
+import { describeGap } from "@/components/charts/TargetRing";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -54,7 +55,12 @@ export function BrandCard({ summary: s, showOwners = true }: { summary: BrandSum
           </div>
         </dl>
 
-        <TargetProgress actual={s.actualROAS} target={s.targetROAS} />
+        <div className="space-y-1">
+          <TargetProgress actual={s.actualROAS} target={s.targetROAS} />
+          <p className={`tabular text-xs font-medium ${s.status === "on_track" ? "text-emerald-700" : s.status === "attention" ? "text-amber-700" : "text-red-600"}`}>
+            {describeGap(s)}
+          </p>
+        </div>
 
         <Button asChild variant="outline" size="sm" className="mt-auto">
           <Link href={`/brands/${s.brand.id}`}>Open Brand <ArrowRight /></Link>

@@ -12,7 +12,8 @@ import { MetricCard } from "@/components/dashboard/MetricCard";
 import { SOURCE } from "@/components/shared/SourceLabel";
 import { BrandChip } from "@/components/shared/BrandMark";
 import { SalesTrendChart } from "@/components/charts/SalesTrendChart";
-import { SalesByBrandChart } from "@/components/charts/SalesByBrandChart";
+import { DonutChart } from "@/components/charts/DonutChart";
+import { salesByBrandSlices } from "@/components/charts/pieData";
 import { AskAIButton } from "@/components/ai/AskAIButton";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -87,7 +88,7 @@ export function SalesView() {
             </CardAction>
           </CardHeader>
           <CardContent>
-            <SalesByBrandChart summaries={summaries} currency={inrIds.length ? "INR" : "AED"} />
+            <DonutChart slices={salesByBrandSlices(summaries, inrIds.length ? "INR" : "AED")} centerValue={formatCurrencyCompact(portfolios.find((p) => p.currency === (inrIds.length ? "INR" : "AED"))?.netSales ?? 0, inrIds.length ? "INR" : "AED")} centerLabel="Net Sales" size={170} />
           </CardContent>
         </Card>
       </div>
