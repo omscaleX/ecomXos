@@ -6,8 +6,9 @@ import { Lock } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { AIDrawer } from "@/components/ai/AIDrawer";
+import { HuddleBar } from "@/components/chat/HuddleBar";
 import { useAppState } from "@/components/providers/AppStateProvider";
-import { canAccessSection, getSectionForPath } from "@/lib/permissions";
+import { canAccessSection, getHomePath, getSectionForPath } from "@/lib/permissions";
 import { EmptyState } from "@/components/shared/States";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -29,8 +30,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // signed-in visitors on /login go to the dashboard.
   React.useEffect(() => {
     if (session === "out" && !isLoginPage) router.replace("/login");
-    if (session === "in" && isLoginPage) router.replace("/dashboard");
-  }, [session, isLoginPage, router]);
+    if (session === "in" && isLoginPage) router.replace(getHomePath(user));
+    // The content team never lands on the marketing dashboard.
+    if (session === "in" && pathname === "/dashboard" && !allowed) router.replace(getHomePath(user));
+  }, [session, isLoginPage, router, user, pathname, allowed]);
 
   if (isLoginPage) return <>{children}</>;
   if (session !== "in") {
@@ -53,11 +56,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             ) : (
               <EmptyState
                 icon={Lock}
-                title="This section isn't available for your role"
-                description={`${user.name} (${user.roleLabel}) doesn't have access to this area. Switch user from the top-right to view it as a manager.`}
+                title="This part is not for your role"
+                description={`${user.name} (${user.roleLabel}) cannot open this area. Switch person from the top right to see it as someone else.`}
                 action={
                   <Button asChild variant="outline" size="sm">
-                    <Link href="/dashboard">Go to Dashboard</Link>
+                    <Link href={getHomePath(user)}>Go back</Link>
                   </Button>
                 }
               />
@@ -66,6 +69,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <AIDrawer />
+      <HuddleBar />
     </div>
   );
 }

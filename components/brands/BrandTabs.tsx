@@ -42,7 +42,7 @@ export function BrandOverviewTab({ summary: s }: { summary: BrandSummary }) {
       <Card>
         <CardHeader>
           <CardTitle>Target vs Actual ROAS</CardTitle>
-          <CardDescription>Actual ROAS = Shopify Net Sales ÷ Total Ad Spend · last 30 days.</CardDescription>
+          <CardDescription>Actual ROAS is Shopify sales divided by total ad spend, over the last 30 days.</CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">
           <TargetRing actual={s.actualROAS} target={s.targetROAS} status={s.status} gap={s.gap} gapPercent={s.gapPercent} size={160} />
@@ -60,7 +60,7 @@ export function BrandOverviewTab({ summary: s }: { summary: BrandSummary }) {
       <Card>
         <CardHeader>
           <CardTitle>Business Performance</CardTitle>
-          <CardDescription>Meta and Google shown separately; Shopify is the sales source.</CardDescription>
+          <CardDescription>Meta and Google are shown apart. Sales always come from Shopify.</CardDescription>
         </CardHeader>
         <CardContent>
           <dl className="space-y-3 text-sm">
@@ -176,7 +176,7 @@ export function BrandSalesTab({ summary: s }: { summary: BrandSummary }) {
       <Card>
         <CardHeader>
           <CardTitle>Meta reported sales vs Shopify Net Sales</CardTitle>
-          <CardDescription>The same period from both sources. Actual ROAS always uses the Shopify figure.</CardDescription>
+          <CardDescription>The same days from both sources. Actual ROAS always uses the Shopify number.</CardDescription>
         </CardHeader>
         <CardContent>
           <SalesComparisonChart data={series} currency={s.currency} />
@@ -198,7 +198,7 @@ export function BrandTargetsTab({ summary: s }: { summary: BrandSummary }) {
       <Card>
         <CardHeader>
           <CardTitle>ROAS Target</CardTitle>
-          <CardDescription>Actual ROAS = Shopify Net Sales ÷ Total Ad Spend · last 30 days.</CardDescription>
+          <CardDescription>Actual ROAS is Shopify sales divided by total ad spend, over the last 30 days.</CardDescription>
           <CardAction>{manager && <Button variant="outline" size="sm" onClick={() => setOpen(true)}>Edit Target</Button>}</CardAction>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -227,7 +227,7 @@ export function BrandTargetsTab({ summary: s }: { summary: BrandSummary }) {
       <Card>
         <CardHeader>
           <CardTitle>Status rules</CardTitle>
-          <CardDescription>Shared calculateTargetStatus() used everywhere.</CardDescription>
+          <CardDescription>The same rule is used on every page.</CardDescription>
         </CardHeader>
         <CardContent>
           <ul className="space-y-2 text-sm">
@@ -281,7 +281,7 @@ export function BrandCreativesTab({ summary: s }: { summary: BrandSummary }) {
     <Card>
       <CardHeader>
         <CardTitle>Creatives</CardTitle>
-        <CardDescription>Creative library snapshot. Asset storage is not part of the prototype.</CardDescription>
+        <CardDescription>A look at the creatives running. Files themselves are not stored here.</CardDescription>
       </CardHeader>
       <CardContent className="px-0 sm:px-4">
         {list.length === 0 ? (

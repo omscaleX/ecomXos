@@ -6,8 +6,11 @@ import {
   BarChart3,
   Briefcase,
   CheckSquare,
+  Clapperboard,
   FileText,
   LayoutDashboard,
+  MessageSquare,
+  PieChart,
   ShoppingBag,
   Sparkles,
   Target,
@@ -29,6 +32,9 @@ const ICONS: Record<SectionKey, LucideIcon> = {
   tasks: CheckSquare,
   team: Users,
   reports: FileText,
+  content: Clapperboard,
+  content_analytics: PieChart,
+  chat: MessageSquare,
   ai: Sparkles,
 };
 

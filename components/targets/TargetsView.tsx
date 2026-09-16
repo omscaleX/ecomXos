@@ -37,7 +37,7 @@ export function TargetsView() {
     <div className="space-y-6">
       <PageHeader
         title="Targets"
-        subtitle="ROAS targets are internal. They are compared with Actual ROAS = Shopify Net Sales ÷ Total Ad Spend (last 30 days)."
+        subtitle="Targets are ours, not the ad platforms&apos;. Each one is compared with Actual ROAS, which is Shopify sales divided by what we spent on ads, over the last 30 days."
         actions={
           <>
             <AskAIButton question="Which brands are below target?" />
@@ -59,7 +59,7 @@ export function TargetsView() {
       <Card>
         <CardHeader>
           <CardTitle>Target vs Actual ROAS</CardTitle>
-          <CardDescription>Each ring fills to Actual ÷ Target. The line under each brand says exactly how far it is from its target.</CardDescription>
+          <CardDescription>Each ring fills up as a brand gets closer to its target. The line underneath says exactly how far off it is.</CardDescription>
         </CardHeader>
         <CardContent>
           <TargetOverview summaries={summaries} />
@@ -69,7 +69,7 @@ export function TargetsView() {
       <Card>
         <CardHeader>
           <CardTitle>Target Tracking</CardTitle>
-          <CardDescription>{manager ? "Click the pencil to change a target. Changes update every dashboard and the AI." : "Targets are set by managers."}</CardDescription>
+          <CardDescription>{manager ? "Press the pencil to change a target. Every page updates straight away." : "Targets are set by managers."}</CardDescription>
         </CardHeader>
         <CardContent className="px-0 sm:px-4">
           <TargetTable summaries={summaries} onEdit={manager ? (id) => setEditing(id) : undefined} />
@@ -89,7 +89,7 @@ export function TargetsView() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Status rules</CardTitle>
-            <CardDescription>Shared calculateTargetStatus() used on every page and by Agency AI.</CardDescription>
+            <CardDescription>The same rule is used on every page.</CardDescription>
           </CardHeader>
           <CardContent>
             <ul className="space-y-2 text-sm">

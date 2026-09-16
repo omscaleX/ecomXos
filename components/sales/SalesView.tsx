@@ -52,7 +52,7 @@ export function SalesView() {
     <div className="space-y-6">
       <PageHeader
         title="Shopify Sales"
-        subtitle="Actual sales from Shopify. Net Sales is after returns, and is the sales figure behind Actual ROAS."
+        subtitle="Real sales from Shopify. Net Sales is what is left after returns, and it is the sales number we use for Actual ROAS."
         actions={<AskAIButton question="What are our Shopify sales?" />}
       />
 
@@ -106,7 +106,7 @@ export function SalesView() {
         <Card>
           <CardHeader>
             <CardTitle>Sales by Brand</CardTitle>
-            <CardDescription>Share of Shopify Net Sales, {chartCurrency} brands.</CardDescription>
+            <CardDescription>Who brought in what share of the Shopify sales, {chartCurrency} brands.</CardDescription>
           </CardHeader>
           <CardContent>
             <DonutChart
@@ -123,7 +123,7 @@ export function SalesView() {
         <CardHeader>
           <CardTitle>Meta reported sales vs Shopify Net Sales</CardTitle>
           <CardDescription>
-            Two sales figures for the same period. Meta counts sales its own attribution claims. Shopify counts money received. Shopify is the source of truth.
+            Two sales numbers for the same days. Meta counts the sales it thinks its ads caused. Shopify counts the money that actually came in. Shopify is the one we trust.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -154,7 +154,7 @@ export function SalesView() {
         <Card className={portfolios.length > 1 ? "" : "lg:col-span-2"}>
           <CardHeader>
             <CardTitle>Highest return rates</CardTitle>
-            <CardDescription>Brands giving back the largest share of what they sell.</CardDescription>
+            <CardDescription>Brands giving back the biggest share of what they sell.</CardDescription>
           </CardHeader>
           <CardContent>
             <ul className="space-y-2">
@@ -177,7 +177,7 @@ export function SalesView() {
       <Card>
         <CardHeader>
           <CardTitle>By Brand</CardTitle>
-          <CardDescription>AOV = Shopify Net Sales ÷ Orders. Net Sales is already after returns.</CardDescription>
+          <CardDescription>Average order value is Shopify sales divided by orders. Sales are already after returns.</CardDescription>
         </CardHeader>
         <CardContent className="px-0 sm:px-4">
           <Table>

@@ -27,9 +27,9 @@ export const SOURCE = {
   totalSpend: "Meta + Google Ad Spend",
   metaSpend: "Meta Ads",
   googleSpend: "Google Ads",
-  actualROAS: "Shopify Net Sales ÷ Total Ad Spend",
+  actualROAS: "Shopify sales ÷ total ad spend",
   target: "Internal target",
   tasks: "Internal tasks",
   orders: "Shopify Orders",
-  aov: "Shopify Net Sales ÷ Orders",
+  aov: "Shopify sales ÷ orders",
 } as const;

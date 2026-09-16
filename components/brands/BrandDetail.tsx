@@ -8,17 +8,19 @@ import type { BrandId } from "@/types";
 import { brandsById, isBrandId } from "@/data/brands";
 import { useAppState } from "@/components/providers/AppStateProvider";
 import { getBrandSummary } from "@/lib/analytics";
-import { canViewBrand, canViewPlatform, isManager } from "@/lib/permissions";
+import { canViewBrand, canViewMoney, canViewPlatform, isManager } from "@/lib/permissions";
 import { BrandHeader } from "@/components/brands/BrandHeader";
 import { BrandPlatformTab } from "@/components/brands/BrandPlatformTab";
 import { BrandCreativesTab, BrandOverviewTab, BrandReportsTab, BrandSalesTab, BrandTargetsTab, BrandTasksTab } from "@/components/brands/BrandTabs";
 import { BrandSimpleView } from "@/components/brands/BrandSimpleView";
+import { BrandContentTab } from "@/components/brands/BrandContentTab";
+import { BrandMark } from "@/components/shared/BrandMark";
 import { LayoutList, Rows3 } from "lucide-react";
 import { EmptyState } from "@/components/shared/States";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const TABS = ["overview", "meta", "google", "sales", "targets", "tasks", "creatives", "reports"] as const;
+const TABS = ["overview", "meta", "google", "sales", "targets", "tasks", "content", "creatives", "reports"] as const;
 type TabKey = (typeof TABS)[number];
 
 export function BrandDetail({ brandId }: { brandId: string }) {
@@ -41,9 +43,26 @@ export function BrandDetail({ brandId }: { brandId: string }) {
       <EmptyState
         icon={Lock}
         title={`${brandsById[brandId].name} isn't one of your brands`}
-        description={`${currentUser.name} only has access to their own brands. Switch user from the top-right to view it as a manager.`}
+        description={`${currentUser.name} only works on their own brands. Switch person from the top right to see it as someone else.`}
         action={<Button asChild variant="outline" size="sm"><Link href="/brands">My Brands</Link></Button>}
       />
+    );
+  }
+
+  // The content team sees the brand's content only, never its money.
+  if (!canViewMoney(currentUser)) {
+    const b = brandsById[brandId as BrandId];
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <BrandMark brand={b} size="lg" />
+          <div className="min-w-0">
+            <h2 className="truncate text-xl font-semibold tracking-tight">{b.name}</h2>
+            <p className="text-sm text-muted-foreground">{b.category} · {b.market}</p>
+          </div>
+        </div>
+        <BrandContentTab brandId={brandId as BrandId} brandName={b.name} />
+      </div>
     );
   }
 
@@ -84,6 +103,7 @@ export function BrandDetail({ brandId }: { brandId: string }) {
     sales: "Sales",
     targets: "Targets",
     tasks: "Tasks",
+    content: "Content",
     creatives: "Creatives",
     reports: "Reports",
   };
@@ -100,7 +120,7 @@ export function BrandDetail({ brandId }: { brandId: string }) {
             <Rows3 /> Detailed view
           </Button>
         </div>
-        <p className="hidden text-xs text-muted-foreground sm:block">{view === "simple" ? "One screen, plain language." : "All tabs: Meta, Google, Sales, Targets, Tasks, Creatives, Reports."}</p>
+        <p className="hidden text-xs text-muted-foreground sm:block">{view === "simple" ? "One screen, plain language." : "All tabs: Meta, Google, Sales, Targets, Tasks, Content, Creatives, Reports."}</p>
       </div>
       {view === "simple" ? (
         <BrandSimpleView summary={summary} onShowDetails={() => setView("detailed")} />
@@ -117,6 +137,7 @@ export function BrandDetail({ brandId }: { brandId: string }) {
         <TabsContent value="sales"><BrandSalesTab summary={summary} /></TabsContent>
         <TabsContent value="targets"><BrandTargetsTab summary={summary} /></TabsContent>
         <TabsContent value="tasks"><BrandTasksTab summary={summary} /></TabsContent>
+        <TabsContent value="content"><BrandContentTab brandId={brandId as BrandId} brandName={brandsById[brandId as BrandId].name} /></TabsContent>
         <TabsContent value="creatives"><BrandCreativesTab summary={summary} /></TabsContent>
         <TabsContent value="reports"><BrandReportsTab summary={summary} /></TabsContent>
       </Tabs>

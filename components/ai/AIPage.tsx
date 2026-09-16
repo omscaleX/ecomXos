@@ -24,7 +24,7 @@ export function AIPage() {
             Agency AI
           </span>
         }
-        subtitle="Ask anything about your brands, performance, targets or tasks."
+        subtitle="Ask anything about your brands, ads, targets or tasks."
         actions={
           <div className="flex flex-wrap gap-1.5">
             <Badge variant="outline">Answering as {user.name} · {user.shortRoleLabel}</Badge>

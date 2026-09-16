@@ -5,7 +5,8 @@ import { LayoutGrid, List, Search } from "lucide-react";
 import type { TargetStatus } from "@/types";
 import { useAppState } from "@/components/providers/AppStateProvider";
 import { getBrandSummaries } from "@/lib/analytics";
-import { getVisibleBrands, isManager } from "@/lib/permissions";
+import { canViewMoney, getVisibleBrands, isManager } from "@/lib/permissions";
+import { BrandContentList } from "@/components/brands/BrandContentList";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { BrandCard } from "@/components/brands/BrandCard";
 import { BrandPerformanceTable } from "@/components/dashboard/BrandPerformanceTable";
@@ -25,6 +26,9 @@ export function BrandsView() {
   const [query, setQuery] = React.useState("");
   const [status, setStatus] = React.useState<StatusFilter>("all");
   const [view, setView] = React.useState<"cards" | "table">("cards");
+
+  // The content team gets a brand list built around content, not money.
+  if (!canViewMoney(currentUser)) return <BrandContentList />;
 
   const filtered = summaries.filter(
     (s) =>

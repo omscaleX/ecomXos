@@ -1,8 +1,9 @@
 "use client";
 
+import * as React from "react";
 import { Check, ChevronDown, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { users } from "@/data/users";
+import { contentUsers, marketingUsers } from "@/data/users";
 import { useAppState } from "@/components/providers/AppStateProvider";
 import { UserAvatar } from "@/components/shared/UserAvatar";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,7 @@ export function UserSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="h-10 gap-2 px-2 pr-3" aria-label={`Current user ${currentUser.name}, ${currentUser.roleLabel}. Switch user`}>
+        <Button variant="outline" className="h-10 gap-2 px-2 pr-3" aria-label={`Current user ${currentUser.name}, ${currentUser.roleLabel}. Switch person`}>
           <UserAvatar user={currentUser} size="md" />
           <span className="hidden text-left leading-tight sm:block">
             <span className="block text-sm font-medium">{currentUser.name}</span>
@@ -35,22 +36,30 @@ export function UserSwitcher() {
           <ChevronDown className="size-4 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel>Switch user (demo)</DropdownMenuLabel>
+      <DropdownMenuContent align="end" className="max-h-[80vh] w-64 overflow-y-auto">
+        <DropdownMenuLabel>Switch person (demo)</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {users.map((u) => (
-          <DropdownMenuItem
-            key={u.id}
-            onSelect={() => setCurrentUserId(u.id)}
-            className={cn("gap-3 py-2", u.id === currentUser.id && "bg-accent")}
-          >
-            <UserAvatar user={u} size="md" />
-            <span className="flex-1 leading-tight">
-              <span className="block text-sm font-medium">{u.name}</span>
-              <span className="block text-xs text-muted-foreground">{u.roleLabel}</span>
-            </span>
-            {u.id === currentUser.id && <Check className="size-4" />}
-          </DropdownMenuItem>
+        {([["Marketing & Accounts", marketingUsers], ["Content Production", contentUsers]] as const).map(([group, list], i) => (
+          <React.Fragment key={group}>
+            {i > 0 && <DropdownMenuSeparator />}
+            <DropdownMenuLabel className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              {group}
+            </DropdownMenuLabel>
+            {list.map((u) => (
+              <DropdownMenuItem
+                key={u.id}
+                onSelect={() => setCurrentUserId(u.id)}
+                className={cn("gap-3 py-2", u.id === currentUser.id && "bg-accent")}
+              >
+                <UserAvatar user={u} size="md" />
+                <span className="flex-1 leading-tight">
+                  <span className="block text-sm font-medium">{u.name}</span>
+                  <span className="block text-xs text-muted-foreground">{u.roleLabel}</span>
+                </span>
+                {u.id === currentUser.id && <Check className="size-4" />}
+              </DropdownMenuItem>
+            ))}
+          </React.Fragment>
         ))}
         <DropdownMenuSeparator />
         <DropdownMenuItem

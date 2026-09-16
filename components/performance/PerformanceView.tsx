@@ -79,7 +79,7 @@ export function PerformanceView() {
     <div className="space-y-6">
       <PageHeader
         title="Performance"
-        subtitle="Meta, Google and Shopify in one place. Platform metrics are for channel analysis; Actual ROAS uses Shopify Net Sales."
+        subtitle="Meta, Google and Shopify side by side. The platform numbers are for reading each channel. Actual ROAS always uses the Shopify sales figure."
         actions={<AskAIButton brandId={brandFilter === "all" ? undefined : brandFilter} platform={platform === "meta" || platform === "google" ? platform : undefined} />}
       />
 
@@ -124,7 +124,7 @@ export function PerformanceView() {
             <Card>
               <CardHeader>
                 <CardTitle>Ad Spend Trend</CardTitle>
-                <CardDescription>{chartCurrency === "INR" ? "India Portfolio (INR)" : "Dubai (AED)"} · {periodLabel} · grouped by {granularity}.</CardDescription>
+                <CardDescription>{chartCurrency === "INR" ? "India brands (INR)" : "Dubai (AED)"} · {periodLabel} · grouped by {granularity}.</CardDescription>
               </CardHeader>
               <CardContent>
                 <SpendTrendChart data={businessSeries} currency={chartCurrency} platforms={visiblePlatforms} />
@@ -309,7 +309,7 @@ function PlatformSection({
         <Card className="xl:col-span-3">
           <CardHeader>
             <CardTitle>{label} by Brand</CardTitle>
-            <CardDescription>{label}-reported ROAS is shown next to Actual ROAS so the difference is visible.</CardDescription>
+            <CardDescription>{label} reports its own ROAS. It sits next to Actual ROAS so you can see the difference.</CardDescription>
           </CardHeader>
           <CardContent className="px-0 sm:px-4">
             <Table>

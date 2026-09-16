@@ -3,6 +3,7 @@ import type { Brand, BrandId } from "@/types";
 export const brands: Brand[] = [
   {
     id: "yeoul",
+    clientId: "yeoul",
     name: "Yeoul",
     currency: "INR",
     market: "India",
@@ -15,6 +16,7 @@ export const brands: Brand[] = [
   },
   {
     id: "giggle-pad",
+    clientId: "giggle-pad",
     name: "Giggle Pad",
     currency: "INR",
     market: "India",
@@ -27,6 +29,7 @@ export const brands: Brand[] = [
   },
   {
     id: "nysh-warmee",
+    clientId: "nysh",
     name: "Nysh - Warmee",
     currency: "INR",
     market: "India",
@@ -39,6 +42,7 @@ export const brands: Brand[] = [
   },
   {
     id: "nysh-bluheat",
+    clientId: "nysh",
     name: "Nysh - BluHeat",
     currency: "INR",
     market: "India",
@@ -51,6 +55,7 @@ export const brands: Brand[] = [
   },
   {
     id: "desividesi-india",
+    clientId: "desividesi",
     name: "DesiVidesi - India",
     currency: "INR",
     market: "India",
@@ -63,6 +68,7 @@ export const brands: Brand[] = [
   },
   {
     id: "desividesi-dubai",
+    clientId: "desividesi",
     name: "DesiVidesi - Dubai",
     currency: "AED",
     market: "Dubai",

@@ -9,13 +9,34 @@
 
 export type Currency = "INR" | "AED";
 
-export type UserId = "bhupes" | "lucky" | "om" | "anubhav" | "sagar";
+export type UserId =
+  // Marketing and account side
+  | "bhupes"
+  | "lucky"
+  | "om"
+  | "anubhav"
+  | "sagar"
+  // Content production side
+  | "meera"
+  | "kavya"
+  | "rahul"
+  | "zoya"
+  | "arjun";
 
 export type Role =
+  // Marketing and account side
   | "senior_manager"
   | "manager"
   | "meta_marketer"
-  | "google_marketer";
+  | "google_marketer"
+  // Content production side
+  | "content_manager"
+  | "script_writer"
+  | "video_editor"
+  | "designer";
+
+/** The three content-production departments. */
+export type ContentDepartment = "script" | "video" | "design";
 
 export type Platform = "meta" | "google";
 
@@ -29,6 +50,11 @@ export interface User {
   shortRoleLabel: string;
   /** Platform the user runs ads on, if any. */
   platform?: Platform;
+  /** Content-production department, for content team members only. */
+  department?: ContentDepartment;
+  /** True for the content-production side of the agency. */
+  isContentTeam?: boolean;
+  email: string;
   initials: string;
   /** Tailwind background class used for avatars. */
   avatarClass: string;
@@ -44,8 +70,19 @@ export type BrandId =
 
 export type Market = "India" | "Dubai";
 
+export type ClientId = "yeoul" | "giggle-pad" | "nysh" | "desividesi";
+
+/** The account a brand belongs to. Two Nysh brands share one client. */
+export interface Client {
+  id: ClientId;
+  name: string;
+  /** Marketing-side owner of the account. */
+  accountManagerId: UserId;
+}
+
 export interface Brand {
   id: BrandId;
+  clientId: ClientId;
   name: string;
   currency: Currency;
   market: Market;

@@ -62,7 +62,7 @@ function EditTargetForm({ brandId, onClose }: { brandId?: BrandId; onClose: () =
     <form onSubmit={submit} className="grid gap-4">
       <DialogHeader>
         <DialogTitle>Edit ROAS target</DialogTitle>
-        <DialogDescription>Targets are compared against Actual ROAS (Shopify Net Sales ÷ total ad spend).</DialogDescription>
+        <DialogDescription>Targets are checked against Actual ROAS, which is Shopify sales divided by total ad spend.</DialogDescription>
       </DialogHeader>
       <div className="grid gap-1.5">
         <Label htmlFor="target-brand">Brand</Label>

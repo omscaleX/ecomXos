@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Lock, Sparkles } from "lucide-react";
 import type { UserId } from "@/types";
 import { dataSources } from "@/data/sources";
-import { ROLE_DEFINITIONS, type RoleDefinition } from "@/lib/roles";
+import { ROLE_DEFINITIONS, SIDE_BLURB, SIDE_LABEL, rolesForSide, type RoleDefinition, type RoleSide } from "@/lib/roles";
+import { getHomePath } from "@/lib/permissions";
 import { useAppState } from "@/components/providers/AppStateProvider";
 import { UserAvatar } from "@/components/shared/UserAvatar";
 import { Badge } from "@/components/ui/badge";
@@ -15,55 +16,68 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 /**
- * Dummy login screen. Pick a role (and a person for roles with more than
- * one), then continue. No password is checked – this is demo only. In
- * production real authentication decides the role and the backend enforces it.
+ * Dummy login screen. Pick your side of the agency, then your role and
+ * the person. No password is checked – this is demo only. In production
+ * real authentication decides the role and the backend enforces it.
  */
 export function LoginScreen() {
   const router = useRouter();
   const { login } = useAppState();
+  const [side, setSide] = React.useState<RoleSide>("marketing");
   const [role, setRole] = React.useState<RoleDefinition>(ROLE_DEFINITIONS[0]);
   const [userId, setUserId] = React.useState<UserId>(ROLE_DEFINITIONS[0].users[0].id);
-  const [email, setEmail] = React.useState("bhupes@agency.com");
+  const [email, setEmail] = React.useState(ROLE_DEFINITIONS[0].users[0].email);
   const [password, setPassword] = React.useState("demo1234");
   const [busy, setBusy] = React.useState(false);
 
   const selectRole = (r: RoleDefinition) => {
     setRole(r);
     setUserId(r.users[0].id);
-    setEmail(`${r.users[0].name.toLowerCase()}@agency.com`);
+    setEmail(r.users[0].email);
   };
-  const selectUser = (id: UserId, name: string) => {
+
+  const selectSide = (s: RoleSide) => {
+    setSide(s);
+    selectRole(rolesForSide(s)[0]);
+  };
+
+  const selectUser = (id: UserId, userEmail: string) => {
     setUserId(id);
-    setEmail(`${name.toLowerCase()}@agency.com`);
+    setEmail(userEmail);
   };
+
+  const selectedUser = role.users.find((u) => u.id === userId) ?? role.users[0];
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     window.setTimeout(() => {
       login(userId);
-      router.replace("/dashboard");
+      router.replace(getHomePath(selectedUser));
     }, 400);
   };
 
-  const selectedUser = role.users.find((u) => u.id === userId) ?? role.users[0];
-
   return (
     <div className="grid min-h-screen lg:grid-cols-5">
-      {/* Left: product story */}
+      {/* Left: what the product does */}
       <aside className="hidden flex-col justify-between bg-primary p-10 text-primary-foreground lg:col-span-2 lg:flex">
         <div className="flex items-center gap-2.5">
           <span className="flex size-9 items-center justify-center rounded-md bg-white/15 text-base font-bold">A</span>
           <span className="leading-tight">
             <span className="block text-sm font-semibold">Agency OS</span>
-            <span className="block text-[11px] text-primary-foreground/70">Marketing operations</span>
+            <span className="block text-[11px] text-primary-foreground/70">One place to run the agency</span>
           </span>
         </div>
         <div className="space-y-6">
-          <h2 className="text-2xl font-semibold leading-snug">One operating system for the whole agency.</h2>
+          <h2 className="text-2xl font-semibold leading-snug">One place for ads, sales and content.</h2>
           <ol className="space-y-2 text-sm text-primary-foreground/80">
-            {["Meta Ads + Google Ads + Shopify in one place", "Actual ROAS = Shopify Net Sales ÷ Total Ad Spend", "Targets, tasks and team workload", "Ask Agency AI anything about the numbers"].map((line, i) => (
+            {[
+              "Meta ads, Google ads and Shopify sales in one place",
+              "Real ROAS = Shopify sales ÷ what you spent on ads",
+              "Targets, tasks and who is busy",
+              "Ask for scripts, videos and creatives, and track them",
+              "Chat with anyone, or start a huddle to talk",
+            ].map((line, i) => (
               <li key={line} className="flex items-start gap-2">
                 <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-white/15 text-[11px] font-semibold">{i + 1}</span>
                 {line}
@@ -83,19 +97,40 @@ export function LoginScreen() {
 
       {/* Right: sign-in */}
       <main className="flex items-center justify-center px-4 py-10 lg:col-span-3 lg:px-12">
-        <form onSubmit={submit} className="w-full max-w-2xl space-y-6">
+        <form onSubmit={submit} className="w-full max-w-2xl space-y-5">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-semibold tracking-tight">Sign in to Agency OS</h1>
-              <p className="text-sm text-muted-foreground">Choose your role. What you see after signing in depends on it.</p>
+              <p className="text-sm text-muted-foreground">Pick your team and your job. What you see depends on it.</p>
             </div>
             <Badge variant="neutral">Demo Data</Badge>
           </div>
 
           <fieldset className="space-y-2">
-            <legend className="text-xs font-medium text-muted-foreground">Role</legend>
+            <legend className="text-xs font-medium text-muted-foreground">Which team are you on?</legend>
             <div className="grid gap-3 sm:grid-cols-2">
-              {ROLE_DEFINITIONS.map((r) => {
+              {(["marketing", "content"] as RoleSide[]).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => selectSide(s)}
+                  aria-pressed={side === s}
+                  className={cn(
+                    "rounded-lg border bg-card p-3 text-left transition-colors cursor-pointer hover:border-primary/40",
+                    side === s && "border-primary ring-2 ring-primary/20",
+                  )}
+                >
+                  <span className="block text-sm font-semibold">{SIDE_LABEL[s]}</span>
+                  <span className="block text-xs text-muted-foreground">{SIDE_BLURB[s]}</span>
+                </button>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset className="space-y-2">
+            <legend className="text-xs font-medium text-muted-foreground">What is your job?</legend>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {rolesForSide(side).map((r) => {
                 const active = r.role === role.role;
                 return (
                   <button
@@ -134,13 +169,13 @@ export function LoginScreen() {
 
           {role.users.length > 1 && (
             <fieldset className="space-y-2">
-              <legend className="text-xs font-medium text-muted-foreground">Sign in as</legend>
+              <legend className="text-xs font-medium text-muted-foreground">Who are you?</legend>
               <div className="flex flex-wrap gap-2">
                 {role.users.map((u) => (
                   <button
                     key={u.id}
                     type="button"
-                    onClick={() => selectUser(u.id, u.name)}
+                    onClick={() => selectUser(u.id, u.email)}
                     aria-pressed={u.id === userId}
                     className={cn(
                       "inline-flex items-center gap-2 rounded-md border bg-card px-3 py-2 text-sm cursor-pointer hover:border-primary/40",
@@ -167,7 +202,7 @@ export function LoginScreen() {
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Lock className="size-3.5" /> Demo login – any password works. Real authentication will be added with the backend.
+              <Lock className="size-3.5" /> Demo login. Any password works. Real sign-in comes with the backend.
             </p>
             <Button type="submit" size="lg" disabled={busy} className="sm:min-w-56">
               {busy ? "Signing in…" : (
@@ -180,7 +215,7 @@ export function LoginScreen() {
           </div>
 
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Sparkles className="size-3.5 text-violet-600" /> Tip: after signing in you can still switch user from the top-right to demo other roles.
+            <Sparkles className="size-3.5 text-violet-600" /> Tip: after signing in you can switch person from the top right to see the app as someone else.
           </p>
         </form>
       </main>

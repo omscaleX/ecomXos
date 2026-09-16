@@ -29,7 +29,7 @@ export function TeamView() {
     <div className="space-y-6">
       <PageHeader
         title="Team"
-        subtitle="Who is responsible for what, and current task workload. Workload is task volume only – it is not an employee performance score."
+        subtitle="Who looks after what, and how much each person has on. This counts tasks only. It is not a score of how well anyone is doing."
         actions={<AskAIButton question="Which team member has the most overdue tasks?" />}
       />
 

@@ -51,14 +51,14 @@ export function ReportsView() {
     <div className="space-y-6">
       <PageHeader
         title="Reports"
-        subtitle="Weekly Performance Report built from the same data as the dashboards."
+        subtitle="A weekly report built from the same numbers as the dashboards."
         actions={<AskAIButton question="Summarize the agency." />}
       />
 
       <Card>
         <CardHeader>
           <CardTitle>Weekly Performance Report</CardTitle>
-          <CardDescription>Choose the brand and date range, then generate a preview. No PDF is produced in the prototype.</CardDescription>
+          <CardDescription>Pick the brand and the dates, then make a preview. No PDF is made in this demo.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-end gap-3">
           <div className="grid gap-1.5">
