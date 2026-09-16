@@ -7,6 +7,7 @@ import { getBrandSummaries, getPortfolioSummary } from "@/lib/analytics";
 import { formatCurrency, formatCurrencyCompact, formatROAS } from "@/lib/formatters";
 import { generateAgencySummary } from "@/lib/agency";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { DateRangePicker, describeRange, usePeriod } from "@/components/shared/PeriodPicker";
 import { PortfolioMetrics } from "@/components/dashboard/PortfolioMetrics";
 import { BrandPerformanceTable } from "@/components/dashboard/BrandPerformanceTable";
 import { NeedsAttention } from "@/components/dashboard/NeedsAttention";
@@ -23,8 +24,10 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 /** Bhupes – "How is the agency doing?" and "What needs attention?" */
 export function SeniorManagerDashboard() {
   const { currentUser, targets, tasks, today } = useAppState();
-  const summaries = getBrandSummaries(brandIds, targets);
-  const agency = generateAgencySummary(brandIds, targets, tasks, { today });
+  const { range, setRange } = usePeriod("30d");
+  const periodLabel = describeRange(range);
+  const summaries = getBrandSummaries(brandIds, targets, range);
+  const agency = generateAgencySummary(brandIds, targets, tasks, { today, range });
   const inrPortfolio = getPortfolioSummary(summaries, "INR");
   const aedPortfolio = summaries.some((x) => x.currency === "AED") ? getPortfolioSummary(summaries, "AED") : undefined;
 
@@ -32,8 +35,13 @@ export function SeniorManagerDashboard() {
     <div className="space-y-6">
       <PageHeader
         title={`Good morning, ${currentUser.name}`}
-        subtitle="Agency overview · last 30 days · Demo Portfolio Total (India in INR, Dubai in AED, never combined)"
-        actions={<QuickActions />}
+        subtitle={`Agency overview · ${periodLabel} · Demo Portfolio Total (India in INR, Dubai in AED, never combined)`}
+        actions={
+          <>
+            <DateRangePicker range={range} onChange={setRange} />
+            <QuickActions />
+          </>
+        }
       />
 
       <PortfolioMetrics summaries={summaries} tasks={tasks} />

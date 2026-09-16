@@ -50,6 +50,27 @@ Shopify Net Sales ÷ Total Ad Spend = Actual ROAS
 
 Meta-reported purchase value and Google-reported conversion value are shown for platform analysis only. They are never used for Actual ROAS. INR (India) and AED (Dubai) are never added together; agency totals are shown per portfolio.
 
+### Two sales figures per brand
+
+Every brand shows both numbers side by side:
+
+| Figure | Source | Used for |
+| --- | --- | --- |
+| Meta reported sales | Meta's own attribution window | Channel analysis only |
+| Shopify Net Sales | Money actually received, after returns | Actual ROAS and all business reporting |
+
+They will not match, and that gap is the point. The Sales page, the Performance table, the brand Sales tab and Agency AI all show both, and all state which one drives ROAS.
+
+### Sales reversals
+
+Each Shopify row carries `returnedAmount` and `returnedOrders` alongside `netSales`. Net Sales already has returns deducted, exactly as Shopify reports it, so Actual ROAS is unaffected. The reversal record is shown separately: sales before returns, what came back, what is left, and the return rate per brand.
+
+### Calendar and granularity
+
+Every KPI screen has a date range picker with presets (Today, This Week, Last 7 Days, Last 30 Days, This Month, Last 90 Days) and a calendar for any custom range. Charts and tables group by **day, week or month**; the available options depend on how long the selected range is. Demo data covers 120 days, so the month view has several buckets.
+
+The last 30 days always sum to the agreed brand figures (`CANONICAL_DAYS` in `data/config.ts`), so the presentation numbers never move. Earlier days are generated at a slightly lower run rate to give the calendar history.
+
 All calculations live in `lib/calculations.ts` (`calculateTotalAdSpend`, `calculateActualROAS`, `calculateAOV`, `calculateTargetGap`, `calculateTargetStatus`, `getBrandsBelowTarget`, `getTopPerformingBrand`, `getTopPriorities`) and `lib/agency.ts` (`generateAgencySummary`). Dashboards, brand pages, reports and the AI all call the same functions.
 
 Target status: On Track when Actual ≥ Target, Attention when Actual ≥ 80% of Target, Below Target otherwise (`ATTENTION_THRESHOLD` in `lib/calculations.ts`).
@@ -67,14 +88,15 @@ components/
   targets/            TargetTable, TargetProgress, EditTargetModal
   tasks/              TaskTable, TaskModal, TaskFilters
   team/, reports/     Team and Reports pages
-  charts/             Recharts components (spend vs sales, ROAS by brand, sales trend, spend trend)
+  charts/             Recharts components (pies, target rings, sales and spend trends)
+  shared/             PeriodPicker (calendar + day/week/month), badges, states
   ai/                 AIChat, AIMessage, AISuggestion, AIInsightCard, AIDrawer
   providers/          AppStateProvider (user, tasks, targets), AIDrawerProvider
   ui/                 shadcn/ui primitives
 data/                 Single source of truth demo data (brands, users, tasks, meta, google, shopify, targets)
 lib/
   calculations.ts     Business formulas (only place ROAS / target logic lives)
-  analytics.ts        Aggregations over the daily rows (the future API boundary)
+  analytics.ts        Aggregations, date ranges, week/month bucketing (the future API boundary)
   agency.ts           generateAgencySummary()
   permissions.ts      UI-only role simulation
   formatters.ts       Currency (INR lakh / AED), dates, labels

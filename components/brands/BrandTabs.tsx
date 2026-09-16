@@ -2,11 +2,11 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { FileText, Plus } from "lucide-react";
-import type { BrandSummary, DateRangeKey } from "@/types";
+import { FileText, Plus, Undo2 } from "lucide-react";
+import type { BrandSummary } from "@/types";
 import { creatives } from "@/data/creatives";
 import { useAppState } from "@/components/providers/AppStateProvider";
-import { getDailyBusinessSeries, getShopifyTotals } from "@/lib/analytics";
+import { getBusinessSeries, getMetaTotals, getShopifyTotals } from "@/lib/analytics";
 import { getVisiblePlatforms, getVisibleTasks, isManager } from "@/lib/permissions";
 import { getTaskCounts, sortTasks } from "@/lib/tasks";
 import { formatCurrency, formatCurrencyCompact, formatGap, formatNumber, formatPercent, formatROAS, TARGET_STATUS_LABEL } from "@/lib/formatters";
@@ -16,6 +16,8 @@ import { DonutChart } from "@/components/charts/DonutChart";
 import { TargetRing } from "@/components/charts/TargetRing";
 import { CHART_COLORS } from "@/components/charts/chartConfig";
 import { SalesTrendChart } from "@/components/charts/SalesTrendChart";
+import { ReversalSummary, SalesComparisonChart } from "@/components/sales/SalesComparison";
+import { PeriodControls, describeRange, usePeriod } from "@/components/shared/PeriodPicker";
 import { TargetProgress } from "@/components/targets/TargetTable";
 import { EditTargetModal } from "@/components/targets/EditTargetModal";
 import { TaskTable } from "@/components/tasks/TaskTable";
@@ -25,7 +27,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 /* ---------------- Overview ---------------- */
 
@@ -109,31 +110,76 @@ function Row({ label, value, strong, muted }: { label: string; value: string; st
 /* ---------------- Sales ---------------- */
 
 export function BrandSalesTab({ summary: s }: { summary: BrandSummary }) {
-  const [range, setRange] = React.useState<DateRangeKey>("30d");
+  const { range, granularity, setRange, setGranularity } = usePeriod("30d");
   const totals = getShopifyTotals([s.brand.id], range);
-  const series = getDailyBusinessSeries([s.brand.id], range);
+  const meta = getMetaTotals([s.brand.id], range);
+  const series = getBusinessSeries([s.brand.id], range, granularity);
+  const periodLabel = describeRange(range);
+  const difference = meta.reportedPurchaseValue - totals.netSales;
+
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <MetricCard label="Shopify Net Sales" value={formatCurrency(totals.netSales, s.currency)} source={SOURCE.shopify} />
+      <PeriodControls
+        period={{ range, granularity }}
+        onRangeChange={setRange}
+        onGranularityChange={setGranularity}
+      />
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+        <MetricCard label="Shopify Net Sales" value={formatCurrency(totals.netSales, s.currency)} source={SOURCE.shopify} hint="After returns." />
         <MetricCard label="Orders" value={formatNumber(totals.orders)} source={SOURCE.orders} />
         <MetricCard label="AOV" value={formatCurrency(totals.aov, s.currency)} source={SOURCE.aov} />
+        <MetricCard
+          label="Returned"
+          value={formatCurrency(totals.returnedAmount, s.currency)}
+          secondary={`${formatNumber(totals.returnedOrders)} orders`}
+          tone={totals.returnRate >= 0.15 ? "danger" : totals.returnRate >= 0.08 ? "warning" : "default"}
+          source="Shopify returns and refunds"
+        />
+        <MetricCard
+          label="Meta reported sales"
+          value={formatCurrency(meta.reportedPurchaseValue, s.currency)}
+          secondary={`${difference >= 0 ? "+" : ""}${formatCurrency(difference, s.currency)} vs Shopify`}
+          source="Meta attribution, not used for ROAS"
+          hint="Meta counts sales its own attribution window claims. Shopify counts money received."
+        />
       </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Sales Trend</CardTitle>
+            <CardDescription>Shopify Net Sales · {periodLabel} · grouped by {granularity}.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SalesTrendChart data={series} currency={s.currency} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Undo2 className="size-4" /> Sales reversals</CardTitle>
+            <CardDescription>Returns, refunds and cancellations for {periodLabel.toLowerCase()}.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ReversalSummary
+              salesBeforeReturns={totals.salesBeforeReturns}
+              returnedAmount={totals.returnedAmount}
+              returnedOrders={totals.returnedOrders}
+              returnRate={totals.returnRate}
+              netSales={totals.netSales}
+              currency={s.currency}
+            />
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
-          <CardTitle>Sales Trend</CardTitle>
-          <CardDescription>Shopify Net Sales only. No discounts, refunds or other breakdowns.</CardDescription>
-          <CardAction>
-            <Tabs value={range} onValueChange={(v) => setRange(v as DateRangeKey)}>
-              <TabsList>
-                <TabsTrigger value="7d">7 days</TabsTrigger>
-                <TabsTrigger value="30d">30 days</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </CardAction>
+          <CardTitle>Meta reported sales vs Shopify Net Sales</CardTitle>
+          <CardDescription>The same period from both sources. Actual ROAS always uses the Shopify figure.</CardDescription>
         </CardHeader>
         <CardContent>
-          <SalesTrendChart data={series} currency={s.currency} />
+          <SalesComparisonChart data={series} currency={s.currency} />
         </CardContent>
       </Card>
     </div>

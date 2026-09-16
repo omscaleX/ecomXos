@@ -7,6 +7,7 @@ import { brandIds } from "@/data/brands";
 import { getBrandSummaries } from "@/lib/analytics";
 import { generateAgencySummary } from "@/lib/agency";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { DateRangePicker, describeRange, usePeriod } from "@/components/shared/PeriodPicker";
 import { PortfolioMetrics } from "@/components/dashboard/PortfolioMetrics";
 import { BrandCard } from "@/components/brands/BrandCard";
 import { PriorityList } from "@/components/dashboard/PriorityList";
@@ -26,17 +27,24 @@ const TEAM: Array<"om" | "anubhav" | "sagar"> = ["om", "anubhav", "sagar"];
 /** Lucky – "What needs to be managed today?" */
 export function ManagerDashboard() {
   const { currentUser, targets, tasks, today } = useAppState();
-  const summaries = getBrandSummaries(brandIds, targets);
+  const { range, setRange } = usePeriod("30d");
+  const periodLabel = describeRange(range);
+  const summaries = getBrandSummaries(brandIds, targets, range);
   const teamTasks = tasks.filter((t) => TEAM.includes(t.assigneeId as (typeof TEAM)[number]));
-  const agency = generateAgencySummary(brandIds, targets, tasks, { today, teamUserIds: TEAM });
+  const agency = generateAgencySummary(brandIds, targets, tasks, { today, teamUserIds: TEAM, range });
   const [editTarget, setEditTarget] = React.useState<BrandId | null>(null);
 
   return (
     <div className="space-y-6">
       <PageHeader
         title={`Good morning, ${currentUser.name}`}
-        subtitle="Operational view · last 30 days · India in INR, Dubai in AED (never combined)"
-        actions={<QuickActions />}
+        subtitle={`Operational view · ${periodLabel} · India in INR, Dubai in AED (never combined)`}
+        actions={
+          <>
+            <DateRangePicker range={range} onChange={setRange} />
+            <QuickActions />
+          </>
+        }
       />
 
       <PortfolioMetrics summaries={summaries} tasks={teamTasks} brandsLabel="My Brands" tasksLabel="Team Open Tasks" />

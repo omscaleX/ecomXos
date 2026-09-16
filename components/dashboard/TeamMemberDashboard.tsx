@@ -7,6 +7,7 @@ import { getVisibleBrands, getVisibleTasks } from "@/lib/permissions";
 import { generateAgencySummary } from "@/lib/agency";
 import { formatCurrency, formatCurrencyCompact, formatNumber, formatPercent, formatROAS } from "@/lib/formatters";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { DateRangePicker, describeRange, usePeriod } from "@/components/shared/PeriodPicker";
 import { PortfolioMetrics } from "@/components/dashboard/PortfolioMetrics";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { BrandCard } from "@/components/brands/BrandCard";
@@ -33,8 +34,10 @@ export function TeamMemberDashboard() {
   const myBrands = getVisibleBrands(currentUser);
   const myBrandIds = myBrands.map((b) => b.id);
   const myTasks = getVisibleTasks(currentUser, tasks);
-  const summaries = getBrandSummaries(myBrandIds, targets);
-  const agency = generateAgencySummary(myBrandIds, targets, myTasks, { today, teamUserIds: [currentUser.id], platform });
+  const { range, setRange } = usePeriod("30d");
+  const periodLabel = describeRange(range);
+  const summaries = getBrandSummaries(myBrandIds, targets, range);
+  const agency = generateAgencySummary(myBrandIds, targets, myTasks, { today, teamUserIds: [currentUser.id], platform, range });
   const portfolios = getPortfolios(summaries);
   const inr = summaries.filter((s) => s.currency === "INR");
   const platformSpendByBrandSlices = inr.map((s, i) => ({
@@ -57,8 +60,13 @@ export function TeamMemberDashboard() {
     <div className="space-y-6">
       <PageHeader
         title={`Good morning, ${currentUser.name}`}
-        subtitle={`${currentUser.roleLabel} · ${myBrands.length} brands · last 30 days`}
-        actions={<QuickActions />}
+        subtitle={`${currentUser.roleLabel} · ${myBrands.length} brands · ${periodLabel}`}
+        actions={
+          <>
+            <DateRangePicker range={range} onChange={setRange} />
+            <QuickActions />
+          </>
+        }
       />
 
       <PortfolioMetrics

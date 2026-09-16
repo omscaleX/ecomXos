@@ -123,13 +123,24 @@ export interface GooglePerformance {
   conversionValue: number;
 }
 
-/** Daily Shopify sales for one brand. Net Sales + Orders only. */
+/**
+ * Daily Shopify sales for one brand.
+ *
+ * `netSales` follows Shopify's own definition and is already AFTER returns.
+ * `returnedAmount` / `returnedOrders` are the reversal record for the same
+ * day, shown separately so the team can see how much was given back.
+ */
 export interface ShopifySales {
   brandId: BrandId;
   date: string;
   currency: Currency;
+  /** Net Sales, after returns. This is the sales figure used for Actual ROAS. */
   netSales: number;
   orders: number;
+  /** Value reversed by returns, refunds and cancellations. */
+  returnedAmount: number;
+  /** Number of orders reversed. */
+  returnedOrders: number;
 }
 
 export type CampaignStatus = "active" | "paused" | "learning";
@@ -177,7 +188,19 @@ export interface Report {
   generatedBy: UserId;
 }
 
-export type DateRangeKey = "today" | "7d" | "30d";
+export type DateRangeKey = "today" | "7d" | "30d" | "this_week" | "this_month" | "90d";
+
+/** An explicit from/to window picked on the calendar. Both are ISO dates. */
+export interface DateRange {
+  from: string;
+  to: string;
+}
+
+/** Anything the analytics layer accepts as a period. */
+export type RangeInput = DateRangeKey | DateRange;
+
+/** How a KPI series is bucketed on a chart or table. */
+export type Granularity = "day" | "week" | "month";
 
 /** Aggregated Meta metrics for a set of rows. */
 export interface MetaTotals {
@@ -210,9 +233,17 @@ export interface GoogleTotals {
 
 /** Aggregated Shopify totals for a set of rows. */
 export interface ShopifyTotals {
+  /** After returns. */
   netSales: number;
   orders: number;
   aov: number;
+  /** Reversal record for the period. */
+  returnedAmount: number;
+  returnedOrders: number;
+  /** netSales + returnedAmount, i.e. before the reversals were applied. */
+  salesBeforeReturns: number;
+  /** returnedAmount / salesBeforeReturns, as a ratio. */
+  returnRate: number;
 }
 
 /**
@@ -225,9 +256,23 @@ export interface BrandSummary {
   metaSpend: number;
   googleSpend: number;
   totalSpend: number;
+  /** Shopify Net Sales, after returns. */
   netSales: number;
   orders: number;
   aov: number;
+  /** Reversal record: value and orders given back in the period. */
+  returnedAmount: number;
+  returnedOrders: number;
+  salesBeforeReturns: number;
+  returnRate: number;
+  /**
+   * The two sales figures side by side:
+   * - metaReportedSales comes from Meta's own attribution.
+   * - netSales comes from Shopify and is the source of truth.
+   */
+  metaReportedSales: number;
+  /** metaReportedSales - netSales. Positive means Meta is over-reporting. */
+  salesGapVsMeta: number;
   actualROAS: number;
   targetROAS: number;
   gap: number;
@@ -247,6 +292,10 @@ export interface PortfolioSummary {
   totalSpend: number;
   netSales: number;
   orders: number;
+  returnedAmount: number;
+  returnedOrders: number;
+  returnRate: number;
+  metaReportedSales: number;
   actualROAS: number;
 }
 

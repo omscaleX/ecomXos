@@ -4,7 +4,7 @@
  * exactly the same numbers.
  */
 
-import { DEMO_DAYS, DEMO_TODAY } from "@/data/config";
+import { CANONICAL_DAYS, DEMO_DAYS, DEMO_TODAY } from "@/data/config";
 
 /** mulberry32 – tiny seeded PRNG. */
 export function createRng(seed: number) {
@@ -33,33 +33,48 @@ export function addDays(iso: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-/** The demo date range: DEMO_DAYS days ending on DEMO_TODAY (inclusive). */
+/** The full demo date range: DEMO_DAYS days ending on DEMO_TODAY (inclusive). */
 export const demoDates: string[] = Array.from({ length: DEMO_DAYS }, (_, i) =>
   addDays(DEMO_TODAY, i - (DEMO_DAYS - 1)),
 );
+
+/** The last CANONICAL_DAYS days. Brand totals describe exactly this window. */
+export const canonicalDates: string[] = demoDates.slice(DEMO_DAYS - CANONICAL_DAYS);
+
+/** Everything before the canonical window, used to give the calendar history. */
+export const priorDates: string[] = demoDates.slice(0, DEMO_DAYS - CANONICAL_DAYS);
 
 export function isWeekend(iso: string): boolean {
   const day = new Date(`${iso}T00:00:00Z`).getUTCDay();
   return day === 0 || day === 6;
 }
 
+export interface DistributeOptions {
+  noise?: number;
+  weekendFactor?: number;
+  trend?: number;
+  decimals?: number;
+}
+
 /**
- * Distribute a total across the demo dates with mild noise, a weekend
- * factor and an optional trend, so that the daily values sum EXACTLY to the
- * requested total (after rounding).
+ * Distribute a total across an explicit list of dates with mild noise, a
+ * weekend factor and an optional trend, so that the daily values sum EXACTLY
+ * to the requested total (after rounding).
  */
-export function distributeTotal(
+export function distributeAcross(
+  dates: string[],
   total: number,
   seedKey: string,
-  options: { noise?: number; weekendFactor?: number; trend?: number; decimals?: number } = {},
+  options: DistributeOptions = {},
 ): number[] {
   const { noise = 0.25, weekendFactor = 1.15, trend = 0, decimals = 0 } = options;
   const rng = createRng(hashString(seedKey));
-  const n = demoDates.length;
-  const weights = demoDates.map((date, i) => {
+  const n = dates.length;
+  if (n === 0) return [];
+  const weights = dates.map((date, i) => {
     const base = 1 + (rng() - 0.5) * 2 * noise;
     const weekend = isWeekend(date) ? weekendFactor : 1;
-    const trendFactor = 1 + trend * (i / (n - 1) - 0.5);
+    const trendFactor = n > 1 ? 1 + trend * (i / (n - 1) - 0.5) : 1;
     return Math.max(0.15, base * weekend * trendFactor);
   });
   const weightSum = weights.reduce((a, b) => a + b, 0);
@@ -69,6 +84,32 @@ export function distributeTotal(
   const drift = Math.round((total - values.reduce((a, b) => a + b, 0)) * factor) / factor;
   values[n - 1] = Math.round((values[n - 1] + drift) * factor) / factor;
   return values;
+}
+
+/**
+ * Build a full-window daily series from a canonical 30-day total.
+ *
+ * The last CANONICAL_DAYS sum exactly to `canonicalTotal`, so the agreed demo
+ * figures never move. The earlier days are generated at a slightly lower run
+ * rate that ramps up, which gives the month view a believable history.
+ *
+ * Returns values aligned to `demoDates`.
+ */
+export function buildFullSeries(
+  canonicalTotal: number,
+  seedKey: string,
+  options: DistributeOptions & { priorScale?: number } = {},
+): number[] {
+  const { priorScale = 0.85, ...dist } = options;
+  const recent = distributeAcross(canonicalDates, canonicalTotal, seedKey, dist);
+  const perDay = canonicalTotal / canonicalDates.length;
+  const priorTotal = perDay * priorDates.length * priorScale;
+  // A positive trend makes the older months ramp up toward the recent window.
+  const prior = distributeAcross(priorDates, priorTotal, `${seedKey}-prior`, {
+    ...dist,
+    trend: (dist.trend ?? 0) + 0.35,
+  });
+  return [...prior, ...recent];
 }
 
 export function round(value: number, decimals = 2): number {

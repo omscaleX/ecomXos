@@ -1,6 +1,7 @@
 import type {
   BrandId,
   Platform,
+  RangeInput,
   BrandSummary,
   PortfolioSummary,
   PriorityItem,
@@ -52,10 +53,10 @@ export function generateAgencySummary(
   brandIds: BrandId[],
   targets: TargetMap,
   tasks: Task[],
-  options: { today?: string; teamUserIds?: User["id"][]; platform?: Platform } = {},
+  options: { today?: string; teamUserIds?: User["id"][]; platform?: Platform; range?: RangeInput } = {},
 ): AgencySummary {
   const today = options.today ?? DEMO_TODAY;
-  const summaries = getBrandSummaries(brandIds, targets, "30d");
+  const summaries = getBrandSummaries(brandIds, targets, options.range ?? "30d");
   const portfolios = getPortfolios(summaries);
   const belowTarget = getBrandsBelowTarget(summaries);
   const counts = getTaskCounts(tasks, today);

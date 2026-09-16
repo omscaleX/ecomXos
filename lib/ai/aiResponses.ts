@@ -528,7 +528,9 @@ export function biggestProblems(ctx: AIContext): AIAnswer {
 export function shopifySales(ctx: AIContext, s?: BrandSummary): AIAnswer {
   if (s) {
     return {
-      content: `${s.brand.name} Shopify Net Sales: **${money(s.netSales, s.currency)}** from ${formatNumber(s.orders)} orders (AOV ${money(s.aov, s.currency)}) in the last 30 days.`,
+      content:
+        `${s.brand.name} Shopify Net Sales: **${money(s.netSales, s.currency)}** from ${formatNumber(s.orders)} orders (AOV ${money(s.aov, s.currency)}) in the last 30 days.\n\n` +
+        `${money(s.returnedAmount, s.currency)} was returned (${formatPercent(s.returnRate, 1)}), already deducted. Meta reports ${money(s.metaReportedSales, s.currency)} for the same period.`,
       actions: [{ label: "View Sales", href: `/brands/${s.brand.id}?tab=sales` }],
       subjectBrandId: s.brand.id,
     };
@@ -538,6 +540,64 @@ export function shopifySales(ctx: AIContext, s?: BrandSummary): AIAnswer {
   return {
     content: `${lines.join("\n")}\n\nBy brand:\n${byBrand.join("\n")}\n\nThese are Shopify Net Sales, not platform-reported revenue.`,
     actions: [{ label: "View Sales", href: "/sales" }],
+  };
+}
+
+export function returnsSummary(ctx: AIContext, s?: BrandSummary): AIAnswer {
+  if (s) {
+    return {
+      content:
+        `${s.brand.name} had **${money(s.returnedAmount, s.currency)}** returned over ${formatNumber(s.returnedOrders)} orders, which is ${formatPercent(s.returnRate, 1)} of what it sold.\n\n` +
+        `Sold before returns: ${money(s.salesBeforeReturns, s.currency)}\n` +
+        `Returned: ${money(s.returnedAmount, s.currency)}\n` +
+        `Shopify Net Sales: ${money(s.netSales, s.currency)}\n\n` +
+        `Net Sales already has returns deducted, so Actual ROAS (${formatROAS(s.actualROAS)}) is unaffected.` +
+        (s.returnRate >= 0.15 ? `\n\nThat return rate is high. It is worth checking sizing, product photos and delivery times.` : ""),
+      actions: [{ label: "View Sales", href: `/brands/${s.brand.id}?view=detailed&tab=sales` }],
+      subjectBrandId: s.brand.id,
+    };
+  }
+  const worst = [...ctx.summaries].sort((a, b) => b.returnRate - a.returnRate);
+  const lines = ctx.portfolios.map(
+    (p) => `**${p.label}**: ${money(p.returnedAmount, p.currency)} returned over ${formatNumber(p.returnedOrders)} orders (${formatPercent(p.returnRate, 1)} of sales)`,
+  );
+  return {
+    content:
+      `Sales reversals for the last 30 days${scopeWord(ctx)}:\n\n` +
+      lines.join("\n") +
+      `\n\nHighest return rates:\n` +
+      worst.slice(0, 3).map((b) => `- ${b.brand.name}: ${money(b.returnedAmount, b.currency)} (${formatPercent(b.returnRate, 1)})`).join("\n") +
+      `\n\nShopify Net Sales is already after returns, so Actual ROAS does not change.`,
+    actions: [{ label: "View Sales", href: "/sales" }],
+    subjectBrandId: worst[0]?.brand.id,
+  };
+}
+
+export function salesSourceComparison(ctx: AIContext, s?: BrandSummary): AIAnswer {
+  if (s) {
+    const diff = s.salesGapVsMeta;
+    return {
+      content:
+        `For ${s.brand.name} the two sales figures are:\n\n` +
+        `Meta reported sales: ${money(s.metaReportedSales, s.currency)}\n` +
+        `Shopify Net Sales: ${money(s.netSales, s.currency)}\n` +
+        `Difference: ${diff >= 0 ? "+" : "-"}${money(Math.abs(diff), s.currency)} (${Math.round(Math.abs(s.netSales ? diff / s.netSales : 0) * 100)}% ${diff >= 0 ? "higher" : "lower"} on Meta)\n\n` +
+        `They differ because Meta counts a sale against the ad it attributes it to, inside its own window. Shopify counts money that actually came in. ` +
+        `We use the Shopify figure for Actual ROAS.`,
+      actions: brandActions(s.brand, ctx),
+      subjectBrandId: s.brand.id,
+    };
+  }
+  const rows = [...ctx.summaries].sort((a, b) => Math.abs(b.salesGapVsMeta) - Math.abs(a.salesGapVsMeta));
+  return {
+    content:
+      `Meta reported sales vs Shopify Net Sales${scopeWord(ctx)}:\n\n` +
+      rows
+        .map((b) => `- ${b.brand.name}: Meta ${money(b.metaReportedSales, b.currency)} vs Shopify ${money(b.netSales, b.currency)} (${b.salesGapVsMeta >= 0 ? "+" : "-"}${money(Math.abs(b.salesGapVsMeta), b.currency)})`)
+        .join("\n") +
+      `\n\nMeta uses its own attribution window, so it will not match Shopify. Actual ROAS always uses the Shopify figure.`,
+    actions: [{ label: "View Sales", href: "/sales" }],
+    subjectBrandId: rows[0]?.brand.id,
   };
 }
 

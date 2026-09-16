@@ -3,7 +3,7 @@
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { Currency, Platform } from "@/types";
 import type { DailyBusinessPoint } from "@/lib/analytics";
-import { formatCurrency, formatCurrencyCompact, formatShortDate } from "@/lib/formatters";
+import { formatCurrency, formatCurrencyCompact } from "@/lib/formatters";
 import { AXIS_TICK, CHART_COLORS, TOOLTIP_STYLE } from "@/components/charts/chartConfig";
 import { EmptyState } from "@/components/shared/States";
 
@@ -30,11 +30,11 @@ export function SpendTrendChart({
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid vertical={false} stroke={CHART_COLORS.grid} />
-        <XAxis dataKey="date" tickFormatter={formatShortDate} tick={AXIS_TICK} axisLine={false} tickLine={false} minTickGap={24} />
+        <XAxis dataKey="label" tick={AXIS_TICK} axisLine={false} tickLine={false} minTickGap={24} />
         <YAxis tickFormatter={(v: number) => formatCurrencyCompact(v, currency)} tick={AXIS_TICK} axisLine={false} tickLine={false} width={64} />
         <Tooltip
           {...TOOLTIP_STYLE}
-          labelFormatter={(label) => formatShortDate(String(label))}
+          labelFormatter={(_label, payload) => (payload?.[0]?.payload as { fullLabel?: string } | undefined)?.fullLabel ?? String(_label)}
           formatter={(value, name) => [formatCurrency(Number(value), currency), String(name)]}
         />
         <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12 }} />

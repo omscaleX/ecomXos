@@ -3,9 +3,9 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { BrandId, BrandSummary, DateRangeKey, Platform } from "@/types";
+import type { BrandId, BrandSummary, Granularity, Platform } from "@/types";
 import { useAppState } from "@/components/providers/AppStateProvider";
-import { DATE_RANGE_LABEL, getBrandSummaries, getDailyBusinessSeries, getDailyGoogleSeries, getDailyMetaSeries, getPortfolios } from "@/lib/analytics";
+import { getBrandSummaries, getBusinessSeries, getGoogleSeries, getMetaSeries, getPortfolios } from "@/lib/analytics";
 import { getVisibleBrands, getVisiblePlatforms } from "@/lib/permissions";
 import { formatCurrency, formatCurrencyCompact, formatNumber, formatPercent, formatROAS } from "@/lib/formatters";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -21,6 +21,7 @@ import { ordersByBrandSlices, salesByBrandSlices, spendByBrandSlices, spendByPla
 import { PlatformTrendChart } from "@/components/charts/PlatformTrendChart";
 import { SalesTrendChart } from "@/components/charts/SalesTrendChart";
 import { AskAIButton } from "@/components/ai/AskAIButton";
+import { PeriodControls, describeRange, usePeriod } from "@/components/shared/PeriodPicker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -28,8 +29,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type PlatformFilter = "all" | Platform | "shopify";
 type BrandFilter = "all" | BrandId;
-
-const RANGES: DateRangeKey[] = ["today", "7d", "30d"];
 
 /**
  * /performance – platform selector (All / Meta / Google / Shopify), date
@@ -48,7 +47,8 @@ export function PerformanceView() {
   const [platform, setPlatformState] = React.useState<PlatformFilter>(
     requestedPlatform && platformOptions.includes(requestedPlatform) ? requestedPlatform : "all",
   );
-  const [range, setRange] = React.useState<DateRangeKey>("30d");
+  const { range, granularity, setRange, setGranularity } = usePeriod("30d");
+  const periodLabel = describeRange(range);
   const requestedBrand = params.get("brand");
   const [brandFilter, setBrandFilter] = React.useState<BrandFilter>(
     requestedBrand && visibleBrands.some((b) => b.id === requestedBrand) ? (requestedBrand as BrandId) : "all",
@@ -68,9 +68,9 @@ export function PerformanceView() {
   const portfolios = getPortfolios(summaries);
   const chartCurrency = summaries.length && summaries.every((s) => s.currency === "AED") ? "AED" : "INR";
   const chartBrandIds = summaries.filter((s) => s.currency === chartCurrency).map((s) => s.brand.id);
-  const businessSeries = getDailyBusinessSeries(chartBrandIds, range);
-  const metaSeries = getDailyMetaSeries(chartBrandIds, range);
-  const googleSeries = getDailyGoogleSeries(chartBrandIds, range);
+  const businessSeries = getBusinessSeries(chartBrandIds, range, granularity);
+  const metaSeries = getMetaSeries(chartBrandIds, range, granularity);
+  const googleSeries = getGoogleSeries(chartBrandIds, range, granularity);
   const hasData = summaries.length > 0 && summaries.some((s) => s.totalSpend > 0 || s.netSales > 0);
 
   const platformLabel: Record<PlatformFilter, string> = { all: "All", meta: "Meta", google: "Google", shopify: "Shopify" };
@@ -91,14 +91,11 @@ export function PerformanceView() {
             ))}
           </TabsList>
         </Tabs>
-        <Select value={range} onValueChange={(v) => setRange(v as DateRangeKey)}>
-          <SelectTrigger className="w-40" aria-label="Date range"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {RANGES.map((r) => (
-              <SelectItem key={r} value={r}>{DATE_RANGE_LABEL[r]}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <PeriodControls
+          period={{ range, granularity }}
+          onRangeChange={setRange}
+          onGranularityChange={setGranularity}
+        />
         <Select value={brandFilter} onValueChange={(v) => setBrandFilter(v as BrandFilter)}>
           <SelectTrigger className="w-52" aria-label="Brand"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -115,19 +112,19 @@ export function PerformanceView() {
       ) : (
         <>
           {(platform === "all" || platform === "shopify") && (
-            <BusinessSection summaries={summaries} portfolios={portfolios} currency={chartCurrency} series={businessSeries} range={range} showTrend={platform === "shopify"} />
+            <BusinessSection summaries={summaries} portfolios={portfolios} currency={chartCurrency} series={businessSeries} periodLabel={periodLabel} granularity={granularity} showTrend={platform === "shopify"} />
           )}
           {(platform === "all" || platform === "meta") && visiblePlatforms.includes("meta") && (
-            <PlatformSection platform="meta" summaries={summaries} currency={chartCurrency} series={metaSeries} range={range} />
+            <PlatformSection platform="meta" summaries={summaries} currency={chartCurrency} series={metaSeries} periodLabel={periodLabel} granularity={granularity} />
           )}
           {(platform === "all" || platform === "google") && visiblePlatforms.includes("google") && (
-            <PlatformSection platform="google" summaries={summaries} currency={chartCurrency} series={googleSeries} range={range} />
+            <PlatformSection platform="google" summaries={summaries} currency={chartCurrency} series={googleSeries} periodLabel={periodLabel} granularity={granularity} />
           )}
           {platform === "all" && (
             <Card>
               <CardHeader>
                 <CardTitle>Ad Spend Trend</CardTitle>
-                <CardDescription>{chartCurrency === "INR" ? "India Portfolio (INR)" : "Dubai (AED)"} · {DATE_RANGE_LABEL[range]}.</CardDescription>
+                <CardDescription>{chartCurrency === "INR" ? "India Portfolio (INR)" : "Dubai (AED)"} · {periodLabel} · grouped by {granularity}.</CardDescription>
               </CardHeader>
               <CardContent>
                 <SpendTrendChart data={businessSeries} currency={chartCurrency} platforms={visiblePlatforms} />
@@ -145,14 +142,16 @@ function BusinessSection({
   portfolios,
   currency,
   series,
-  range,
+  periodLabel,
+  granularity,
   showTrend,
 }: {
   summaries: BrandSummary[];
   portfolios: ReturnType<typeof getPortfolios>;
   currency: "INR" | "AED";
-  series: ReturnType<typeof getDailyBusinessSeries>;
-  range: DateRangeKey;
+  series: ReturnType<typeof getBusinessSeries>;
+  periodLabel: string;
+  granularity: Granularity;
   showTrend: boolean;
 }) {
   return (
@@ -174,7 +173,7 @@ function BusinessSection({
       <Card>
         <CardHeader>
           <CardTitle>Target vs Actual ROAS</CardTitle>
-          <CardDescription>Shopify Net Sales ÷ Total Ad Spend for {DATE_RANGE_LABEL[range].toLowerCase()}, against each brand&apos;s target.</CardDescription>
+          <CardDescription>Shopify Net Sales ÷ Total Ad Spend for {periodLabel.toLowerCase()}, against each brand&apos;s target.</CardDescription>
         </CardHeader>
         <CardContent>
           <TargetOverview summaries={summaries} />
@@ -184,7 +183,7 @@ function BusinessSection({
         <Card>
           <CardHeader>
             <CardTitle>{showTrend ? "Shopify Net Sales by Brand" : "Ad Spend by Platform"}</CardTitle>
-            <CardDescription>{currency === "INR" ? "INR brands" : "AED"} · {DATE_RANGE_LABEL[range]}.</CardDescription>
+            <CardDescription>{currency === "INR" ? "INR brands" : "AED"} · {periodLabel}.</CardDescription>
           </CardHeader>
           <CardContent>
             <DonutChart slices={showTrend ? salesByBrandSlices(summaries, currency) : spendByPlatformSlices(summaries, currency)} size={150} />
@@ -193,7 +192,7 @@ function BusinessSection({
         <Card>
           <CardHeader>
             <CardTitle>{showTrend ? "Orders by Brand" : "Ad Spend by Brand"}</CardTitle>
-            <CardDescription>{currency === "INR" ? "INR brands" : "AED"} · {DATE_RANGE_LABEL[range]}.</CardDescription>
+            <CardDescription>{currency === "INR" ? "INR brands" : "AED"} · {periodLabel}.</CardDescription>
           </CardHeader>
           <CardContent>
             <DonutChart slices={showTrend ? ordersByBrandSlices(summaries, currency) : spendByBrandSlices(summaries, currency)} size={150} />
@@ -202,7 +201,7 @@ function BusinessSection({
         <Card className="md:col-span-2 xl:col-span-1">
           <CardHeader>
             <CardTitle>{showTrend ? "Shopify Net Sales Trend" : "Shopify Net Sales by Brand"}</CardTitle>
-            <CardDescription>{currency === "INR" ? "INR brands" : "AED"} · {DATE_RANGE_LABEL[range]}.</CardDescription>
+            <CardDescription>{currency === "INR" ? "INR brands" : "AED"} · {periodLabel}{showTrend ? ` · by ${granularity}` : ""}.</CardDescription>
           </CardHeader>
           <CardContent>
             {showTrend ? <SalesTrendChart data={series} currency={currency} height={200} /> : <DonutChart slices={salesByBrandSlices(summaries, currency)} size={150} />}
@@ -212,7 +211,9 @@ function BusinessSection({
       <Card>
         <CardHeader>
           <CardTitle>By Brand</CardTitle>
-          <CardDescription>Business view. Meta and Google spend are shown separately and added for Total Ad Spend.</CardDescription>
+          <CardDescription>
+            Two sales figures per brand: what Meta reports, and what Shopify recorded. Actual ROAS always uses the Shopify figure.
+          </CardDescription>
         </CardHeader>
         <CardContent className="px-0 sm:px-4">
           <Table>
@@ -222,7 +223,9 @@ function BusinessSection({
                 <TableHead className="text-right">Meta Spend</TableHead>
                 <TableHead className="text-right">Google Spend</TableHead>
                 <TableHead className="text-right">Total Ad Spend</TableHead>
+                <TableHead className="text-right">Meta reported sales</TableHead>
                 <TableHead className="text-right">Shopify Net Sales</TableHead>
+                <TableHead className="text-right">Returned</TableHead>
                 <TableHead className="text-right">Orders</TableHead>
                 <TableHead className="text-right">Actual ROAS</TableHead>
                 <TableHead>Status</TableHead>
@@ -235,7 +238,9 @@ function BusinessSection({
                   <TableCell className="tabular text-right">{formatCurrency(s.metaSpend, s.currency)}</TableCell>
                   <TableCell className="tabular text-right">{formatCurrency(s.googleSpend, s.currency)}</TableCell>
                   <TableCell className="tabular text-right font-medium">{formatCurrency(s.totalSpend, s.currency)}</TableCell>
+                  <TableCell className="tabular text-right text-muted-foreground">{formatCurrency(s.metaReportedSales, s.currency)}</TableCell>
                   <TableCell className="tabular text-right font-medium">{formatCurrency(s.netSales, s.currency)}</TableCell>
+                  <TableCell className="tabular text-right text-red-600">-{formatCurrency(s.returnedAmount, s.currency)}</TableCell>
                   <TableCell className="tabular text-right">{formatNumber(s.orders)}</TableCell>
                   <TableCell className="tabular text-right font-semibold">{formatROAS(s.actualROAS)}</TableCell>
                   <TableCell><TargetStatusBadge status={s.status} /></TableCell>
@@ -254,13 +259,15 @@ function PlatformSection({
   summaries,
   currency,
   series,
-  range,
+  periodLabel,
+  granularity,
 }: {
   platform: Platform;
   summaries: BrandSummary[];
   currency: "INR" | "AED";
-  series: ReturnType<typeof getDailyMetaSeries>;
-  range: DateRangeKey;
+  series: ReturnType<typeof getMetaSeries>;
+  periodLabel: string;
+  granularity: Granularity;
 }) {
   const isMeta = platform === "meta";
   const label = isMeta ? "Meta" : "Google";
@@ -293,7 +300,7 @@ function PlatformSection({
         <Card className="xl:col-span-2">
           <CardHeader>
             <CardTitle>{label} Spend Trend</CardTitle>
-            <CardDescription>{DATE_RANGE_LABEL[range]} · daily.</CardDescription>
+            <CardDescription>{periodLabel} · by {granularity}.</CardDescription>
           </CardHeader>
           <CardContent>
             <PlatformTrendChart data={series} platform={platform} currency={currency} />

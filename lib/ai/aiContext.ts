@@ -141,7 +141,7 @@ export function getSuggestedQuestions(user: User, brand?: Brand): string[] {
     return [
       "Why is ROAS low?",
       "What should we check?",
-      "Show my tasks.",
+      "How many returns?",
       "Compare Meta and Google.",
     ];
   }
@@ -153,6 +153,8 @@ export function getSuggestedQuestions(user: User, brand?: Brand): string[] {
       "Which team member has the most overdue tasks?",
       "What is our actual ROAS?",
       "Which brand has the highest Shopify sales?",
+      "What is our return rate?",
+      "Why do Meta and Shopify sales differ?",
     ];
   }
   if (user.role === "manager") {

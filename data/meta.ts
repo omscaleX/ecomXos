@@ -1,7 +1,7 @@
 import type { BrandId, MetaCampaign, MetaPerformance } from "@/types";
 import { brandIds } from "@/data/brands";
 import { brandDemoTotals } from "@/data/demo/totals";
-import { createRng, demoDates, distributeTotal, hashString, round, roundCount } from "@/data/demo/series";
+import { buildFullSeries, createRng, demoDates, hashString, round, roundCount } from "@/data/demo/series";
 
 /**
  * Daily Meta Ads performance, one row per brand per day.
@@ -12,7 +12,7 @@ import { createRng, demoDates, distributeTotal, hashString, round, roundCount } 
  */
 function buildMetaSeries(brandId: BrandId): MetaPerformance[] {
   const t = brandDemoTotals[brandId];
-  const spendByDay = distributeTotal(t.metaSpend, `meta-spend-${brandId}`, {
+  const spendByDay = buildFullSeries(t.metaSpend, `meta-spend-${brandId}`, {
     noise: 0.22,
     weekendFactor: 1.12,
     trend: brandId === "nysh-bluheat" ? -0.2 : 0.1,

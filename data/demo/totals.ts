@@ -18,6 +18,12 @@ export interface BrandDemoTotals {
   metaReportedROAS: number;
   /** Google-reported conversion value ROAS on Google spend. */
   googleReportedROAS: number;
+  /**
+   * Share of sales given back as returns, refunds or cancellations.
+   * returnedAmount = netSales * returnRate / (1 - returnRate), so that
+   * returnedAmount / (netSales + returnedAmount) === returnRate.
+   */
+  returnRate: number;
   meta: { cpm: number; ctr: number; conversionRate: number; frequency: number };
   google: { cpm: number; ctr: number; conversionRate: number };
 }
@@ -30,6 +36,7 @@ export const brandDemoTotals: Record<BrandId, BrandDemoTotals> = {
     orders: 100,
     metaReportedROAS: 3.1,
     googleReportedROAS: 2.6,
+    returnRate: 0.04,
     meta: { cpm: 210, ctr: 0.0142, conversionRate: 0.0067, frequency: 1.8 },
     google: { cpm: 300, ctr: 0.036, conversionRate: 0.006 },
   },
@@ -40,6 +47,7 @@ export const brandDemoTotals: Record<BrandId, BrandDemoTotals> = {
     orders: 110,
     metaReportedROAS: 2.7,
     googleReportedROAS: 2.4,
+    returnRate: 0.07,
     meta: { cpm: 185, ctr: 0.0118, conversionRate: 0.0055, frequency: 2.1 },
     google: { cpm: 260, ctr: 0.031, conversionRate: 0.0055 },
   },
@@ -50,6 +58,7 @@ export const brandDemoTotals: Record<BrandId, BrandDemoTotals> = {
     orders: 120,
     metaReportedROAS: 3.0,
     googleReportedROAS: 2.8,
+    returnRate: 0.12,
     meta: { cpm: 230, ctr: 0.0155, conversionRate: 0.006, frequency: 1.9 },
     google: { cpm: 330, ctr: 0.041, conversionRate: 0.0065 },
   },
@@ -60,6 +69,7 @@ export const brandDemoTotals: Record<BrandId, BrandDemoTotals> = {
     orders: 35,
     metaReportedROAS: 1.9,
     googleReportedROAS: 1.7,
+    returnRate: 0.18,
     meta: { cpm: 265, ctr: 0.0091, conversionRate: 0.0075, frequency: 2.6 },
     google: { cpm: 400, ctr: 0.024, conversionRate: 0.005 },
   },
@@ -70,6 +80,7 @@ export const brandDemoTotals: Record<BrandId, BrandDemoTotals> = {
     orders: 130,
     metaReportedROAS: 3.6,
     googleReportedROAS: 3.1,
+    returnRate: 0.16,
     meta: { cpm: 195, ctr: 0.0168, conversionRate: 0.0045, frequency: 1.7 },
     google: { cpm: 280, ctr: 0.044, conversionRate: 0.0065 },
   },
@@ -80,6 +91,7 @@ export const brandDemoTotals: Record<BrandId, BrandDemoTotals> = {
     orders: 45,
     metaReportedROAS: 2.5,
     googleReportedROAS: 2.2,
+    returnRate: 0.14,
     meta: { cpm: 14, ctr: 0.0125, conversionRate: 0.0045, frequency: 2.0 },
     google: { cpm: 25, ctr: 0.034, conversionRate: 0.007 },
   },

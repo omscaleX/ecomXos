@@ -69,6 +69,14 @@ export function BrandSimpleView({ summary: s, onShowDetails }: { summary: BrandS
               The target is <strong className="text-foreground">{formatROAS(s.targetROAS)}</strong>, so the brand is{" "}
               <strong className={cn(s.status === "on_track" ? "text-emerald-700" : s.status === "attention" ? "text-amber-700" : "text-red-600")}>{describeGap(s)}</strong>.
             </p>
+            <p className="text-sm text-muted-foreground">
+              Meta reports <strong className="text-foreground">{formatCurrency(s.metaReportedSales, cur)}</strong> of sales for the same period,{" "}
+              {Math.abs(s.salesGapVsMeta) < 1
+                ? "which matches Shopify."
+                : `${formatCurrency(Math.abs(s.salesGapVsMeta), cur)} ${s.salesGapVsMeta > 0 ? "more" : "less"} than Shopify.`}{" "}
+              Customers sent back <strong className="text-foreground">{formatCurrency(s.returnedAmount, cur)}</strong> ({formatPercent(s.returnRate, 1)} of sales),
+              already deducted from Net Sales.
+            </p>
             <div className="flex flex-wrap justify-center gap-2 lg:justify-start">
               <Button size="sm" onClick={() => openDrawer({ brandId: s.brand.id, initialQuestion: s.status === "on_track" ? "What should we do?" : `Why does ${s.brand.name} need attention?` })}>
                 <Sparkles /> Ask Agency AI
@@ -80,9 +88,10 @@ export function BrandSimpleView({ summary: s, onShowDetails }: { summary: BrandS
       </Card>
 
       {/* Row 2: the four numbers */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <BigNumber label="Total Ad Spend" value={formatCurrency(s.totalSpend, cur)} source={SOURCE.totalSpend} />
         <BigNumber label="Shopify Net Sales" value={formatCurrency(s.netSales, cur)} source={SOURCE.shopify} />
+        <BigNumber label="Returned" value={`-${formatCurrency(s.returnedAmount, cur)}`} source={`${formatPercent(s.returnRate, 1)} of sales`} tone="danger" />
         <BigNumber label="Orders" value={formatNumber(s.orders)} source={SOURCE.orders} />
         <BigNumber label="Average Order Value" value={formatCurrency(s.aov, cur)} source={SOURCE.aov} />
       </div>
@@ -152,11 +161,21 @@ export function BrandSimpleView({ summary: s, onShowDetails }: { summary: BrandS
   );
 }
 
-function BigNumber({ label, value, source }: { label: string; value: string; source: string }) {
+function BigNumber({
+  label,
+  value,
+  source,
+  tone = "default",
+}: {
+  label: string;
+  value: string;
+  source: string;
+  tone?: "default" | "danger";
+}) {
   return (
     <div className="rounded-lg border bg-card p-4">
       <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      <p className="tabular mt-1 text-2xl font-semibold tracking-tight">{value}</p>
+      <p className={cn("tabular mt-1 text-2xl font-semibold tracking-tight", tone === "danger" && "text-red-600")}>{value}</p>
       <p className="mt-1 text-[11px] text-muted-foreground">{source}</p>
     </div>
   );

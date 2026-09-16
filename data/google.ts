@@ -1,7 +1,7 @@
 import type { BrandId, GoogleCampaign, GooglePerformance } from "@/types";
 import { brandIds } from "@/data/brands";
 import { brandDemoTotals } from "@/data/demo/totals";
-import { createRng, demoDates, distributeTotal, hashString, round, roundCount } from "@/data/demo/series";
+import { buildFullSeries, createRng, demoDates, hashString, round, roundCount } from "@/data/demo/series";
 
 /**
  * Daily Google Ads performance, one row per brand per day.
@@ -10,7 +10,7 @@ import { createRng, demoDates, distributeTotal, hashString, round, roundCount } 
  */
 function buildGoogleSeries(brandId: BrandId): GooglePerformance[] {
   const t = brandDemoTotals[brandId];
-  const spendByDay = distributeTotal(t.googleSpend, `google-spend-${brandId}`, {
+  const spendByDay = buildFullSeries(t.googleSpend, `google-spend-${brandId}`, {
     noise: 0.18,
     weekendFactor: 0.9,
     trend: 0.05,

@@ -175,6 +175,23 @@ export function answerQuestion(question: string, request: AIRequestContext): AIA
     return R.agencySummary(ctx);
   }
 
+  // Sales reversals: returns, refunds, cancellations
+  if (has(q, "return", "returns", "refund", "reversal", "cancelled", "canceled", "cancellation", "sent back", "came back", "rto")) {
+    return R.returnsSummary(ctx, s);
+  }
+
+  // The two sales figures: Meta-reported vs Shopify
+  if (
+    has(q, "meta") &&
+    has(q, "sales", "revenue", "purchase value", "reported") &&
+    has(q, "shopify", "vs", "versus", "compare", "different", "differ", "match", "doesnt match", "does not match", "gap")
+  ) {
+    return R.salesSourceComparison(ctx, s);
+  }
+  if (has(q, "two sales", "both sales", "sales figures", "sales numbers", "which sales number", "sales source")) {
+    return R.salesSourceComparison(ctx, s);
+  }
+
   // Sales (Shopify)
   if (has(q, "highest sales", "most sales", "highest shopify", "most shopify", "top selling", "highest net sales", "biggest seller", "sells the most")) return R.highestSales(ctx);
   if (has(q, "sales", "shopify", "orders", "sold", "selling", "aov", "order value")) return R.shopifySales(ctx, s);
