@@ -9,7 +9,7 @@ import type {
 import { DEMO_TODAY } from "@/data/config";
 import { addDays } from "@/data/demo/series";
 import { brandsById } from "@/data/brands";
-import { CONTENT_MANAGER_ID } from "@/data/users";
+import { CONTENT_MANAGER_BY_DEPARTMENT } from "@/data/users";
 
 /**
  * Demo content requests.
@@ -346,7 +346,7 @@ function buildRequest(seed: RequestSeed, index: number): ContentRequest {
     requesterId: seed.requesterId,
     createdAt,
     createdTime: timeFor(index),
-    departmentManagerId: CONTENT_MANAGER_ID,
+    departmentManagerId: CONTENT_MANAGER_BY_DEPARTMENT[seed.department],
     assigneeId: seed.assigneeId,
     assignedAt: seed.assignedAge !== undefined ? addDays(DEMO_TODAY, -seed.assignedAge) : undefined,
     assignedTime: seed.assignedAge !== undefined ? timeFor(index + 1) : undefined,

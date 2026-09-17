@@ -316,7 +316,7 @@ function ActionPanel({ request }: { request: ContentRequest }) {
   const [note, setNote] = React.useState("");
   const [changeNote, setChangeNote] = React.useState("");
 
-  const showAssign = canAssign(user) && request.status !== "completed";
+  const showAssign = canAssign(user, request) && request.status !== "completed";
   const showPickUp = canPickUp(user, request);
   const showSubmit = canSubmit(user, request);
   const showReview = canReview(user, request);

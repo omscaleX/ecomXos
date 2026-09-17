@@ -11,7 +11,7 @@ import type {
   RequestSource,
 } from "@/types/content";
 import type { ChatMessage, Conversation, Huddle } from "@/types/chat";
-import { usersById } from "@/data/users";
+import { CONTENT_MANAGER_BY_DEPARTMENT, usersById } from "@/data/users";
 import { getSessionServerSnapshot, getSessionSnapshot, getUserServerSnapshot, getUserSnapshot, loginAs, logout as logoutStore, setStoredUserId, subscribeUser, type SessionState } from "@/lib/userStore";
 import { initialTasks } from "@/data/tasks";
 import { initialTargetMap, type TargetMap } from "@/data/targets";
@@ -189,7 +189,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         requesterId: currentUserId,
         createdAt: DEMO_TODAY,
         createdTime: nowTime(),
-        departmentManagerId: "meera",
+        departmentManagerId: CONTENT_MANAGER_BY_DEPARTMENT[input.department],
         details: input.details,
         brief: input.brief,
         eta: input.eta,

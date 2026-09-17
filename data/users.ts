@@ -71,12 +71,37 @@ export const users: User[] = [
     id: "meera",
     name: "Meera",
     role: "content_manager",
-    roleLabel: "Content Production Manager",
-    shortRoleLabel: "Content Manager",
+    roleLabel: "Script Writing Manager",
+    shortRoleLabel: "Script Manager",
+    department: "script",
     isContentTeam: true,
     email: "meera@agency.com",
     initials: "M",
     avatarClass: "bg-fuchsia-700 text-white",
+  },
+  {
+    id: "vikram",
+    name: "Vikram",
+    role: "content_manager",
+    roleLabel: "Video Editing Manager",
+    shortRoleLabel: "Video Manager",
+    department: "video",
+    isContentTeam: true,
+    email: "vikram@agency.com",
+    initials: "V",
+    avatarClass: "bg-red-700 text-white",
+  },
+  {
+    id: "tara",
+    name: "Tara",
+    role: "content_manager",
+    roleLabel: "Graphic Design Manager",
+    shortRoleLabel: "Design Manager",
+    department: "design",
+    isContentTeam: true,
+    email: "tara@agency.com",
+    initials: "T",
+    avatarClass: "bg-emerald-700 text-white",
   },
   {
     id: "kavya",
@@ -144,10 +169,27 @@ export const marketingUsers = users.filter((u) => !u.isContentTeam);
 /** Content production side. These users produce the work. */
 export const contentUsers = users.filter((u) => u.isContentTeam);
 
-/** The producers in one department, excluding the manager. */
-export function getDepartmentMembers(department: ContentDepartment): User[] {
-  return users.filter((u) => u.department === department);
+/** Each production house has its own manager. */
+export const contentManagers = users.filter((u) => u.role === "content_manager");
+
+/** The people who actually make the work: writers, editors, designers. */
+export const contentProducers = users.filter(
+  (u) => u.isContentTeam && u.role !== "content_manager",
+);
+
+/** Who owns each queue. Every request goes to the manager of its house. */
+export const CONTENT_MANAGER_BY_DEPARTMENT: Record<ContentDepartment, UserId> = {
+  script: "meera",
+  video: "vikram",
+  design: "tara",
+};
+
+export function getContentManager(department: ContentDepartment): User {
+  return usersById[CONTENT_MANAGER_BY_DEPARTMENT[department]];
 }
 
-/** The single manager who owns all three content queues. */
-export const CONTENT_MANAGER_ID: UserId = "meera";
+/** The producers in one department, not counting that house's manager. */
+export function getDepartmentMembers(department: ContentDepartment): User[] {
+  return contentProducers.filter((u) => u.department === department);
+}
+

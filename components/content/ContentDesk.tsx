@@ -62,16 +62,20 @@ export function ContentDesk() {
     [mine],
   );
 
-  const showQueues = isContentManager(user) || !isContentTeam(user);
+  // Marketing sees all three houses. A content manager runs one of them.
+  const showAllQueues = !isContentTeam(user);
+  const myHouse = user.department;
 
-  const subtitle = isContentTeam(user)
-    ? "Work that has come to you, and what your team has open."
-    : "Content you have asked for, and anything waiting on you.";
+  const subtitle = isContentManager(user)
+    ? `Everything asked of ${myHouse ? DEPARTMENT_LABEL[myHouse] : "your team"}. You decide who does what.`
+    : isContentTeam(user)
+      ? "Work that has come to you, and what your team has open."
+      : "Content you have asked for, and anything waiting on you.";
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title={isContentTeam(user) ? "My Work" : "Content Desk"}
+        title={isContentManager(user) && myHouse ? `${DEPARTMENT_LABEL[myHouse]} Desk` : isContentTeam(user) ? "My Work" : "Content Desk"}
         subtitle={subtitle}
         actions={canRaiseRequest(user) ? <RaiseContentTaskButton context={{ sourceLabel: "Content Desk", sourcePath: "/content" }} /> : undefined}
       />
@@ -102,10 +106,10 @@ export function ContentDesk() {
         </section>
       )}
 
-      {showQueues ? (
+      {showAllQueues ? (
         <QueueTabs requests={mine} today={today} />
       ) : (
-        <MyQueue requests={mine} today={today} department={user.department} />
+        <MyQueue requests={mine} today={today} department={myHouse} isHouseManager={isContentManager(user)} />
       )}
 
       <section className="space-y-3">
@@ -186,14 +190,28 @@ function QueueTabs({ requests, today }: { requests: ContentRequest[]; today: str
   );
 }
 
-function MyQueue({ requests, today, department }: { requests: ContentRequest[]; today: string; department?: ContentDepartment }) {
+function MyQueue({
+  requests,
+  today,
+  department,
+  isHouseManager,
+}: {
+  requests: ContentRequest[];
+  today: string;
+  department?: ContentDepartment;
+  isHouseManager: boolean;
+}) {
   if (!department) return null;
   const open = requests.filter((r) => r.department === department && r.status !== "completed");
   return (
     <section className="space-y-3">
       <div>
         <h3 className="text-sm font-semibold">{DEPARTMENT_LABEL[department]} queue</h3>
-        <p className="text-xs text-muted-foreground">Your jobs, plus anything in your team nobody has picked up.</p>
+        <p className="text-xs text-muted-foreground">
+          {isHouseManager
+            ? "Everything asked of your team. Open a job to give it to someone."
+            : "Your jobs, plus anything in your team nobody has picked up."}
+        </p>
       </div>
       <QueueList requests={open} today={today} />
     </section>

@@ -18,6 +18,8 @@ export type UserId =
   | "sagar"
   // Content production side
   | "meera"
+  | "vikram"
+  | "tara"
   | "kavya"
   | "rahul"
   | "zoya"

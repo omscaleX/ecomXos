@@ -3,11 +3,12 @@
 import * as React from "react";
 import type { ContentDepartment } from "@/types";
 import { brands } from "@/data/brands";
-import { contentUsers } from "@/data/users";
+import { contentProducers, getContentManager } from "@/data/users";
 import { useAppState, useContent } from "@/components/providers/AppStateProvider";
-import { DEPARTMENTS, DEPARTMENT_LABEL } from "@/lib/content";
+import { DEPARTMENTS, DEPARTMENT_LABEL, getVisibleRequests } from "@/lib/content";
+import { isContentManager } from "@/lib/permissions";
 import {
-  buildAllDepartmentStats,
+  buildDepartmentStats,
   buildBrandContentStats,
   buildContentOverview,
   buildPersonLoad,
@@ -31,13 +32,23 @@ import { CountCard } from "@/components/content/ContentBits";
  * here, so nothing can be confused with ROAS or sales.
  */
 export function ContentAnalytics() {
-  const { today } = useAppState();
+  const { currentUser: user, today } = useAppState();
   const { contentRequests } = useContent();
   const period = usePeriod("30d");
 
-  const rows = React.useMemo(() => filterByRange(contentRequests, period.range), [contentRequests, period.range]);
+  // A house manager reports on their own house. Marketing sees all three.
+  const houses = React.useMemo(
+    () => (isContentManager(user) && user.department ? [user.department] : DEPARTMENTS),
+    [user],
+  );
+  const visible = React.useMemo(() => getVisibleRequests(user, contentRequests), [user, contentRequests]);
+  const rows = React.useMemo(() => filterByRange(visible, period.range), [visible, period.range]);
   const overview = React.useMemo(() => buildContentOverview(rows, today), [rows, today]);
-  const stats = React.useMemo(() => buildAllDepartmentStats(rows, today), [rows, today]);
+  const stats = React.useMemo(() => houses.map((d) => buildDepartmentStats(rows, d, today)), [rows, houses, today]);
+  const producers = React.useMemo(
+    () => contentProducers.filter((u) => u.department && houses.includes(u.department)),
+    [houses],
+  );
 
   const mix = stats
     .map((s, i) => ({ name: DEPARTMENT_LABEL[s.department], value: s.requested, color: SLICE_COLORS[i] }))
@@ -53,7 +64,11 @@ export function ContentAnalytics() {
     <div className="space-y-6">
       <PageHeader
         title="Content Reports"
-        subtitle="How much content was asked for, how much is finished, and how long it takes."
+        subtitle={
+          houses.length === 1
+            ? `How much ${DEPARTMENT_LABEL[houses[0]]} was asked for, how much is finished, and how long it takes.`
+            : "How much content was asked for, how much is finished, and how long it takes."
+        }
         actions={<PeriodControls period={period} onRangeChange={period.setRange} onGranularityChange={period.setGranularity} />}
       />
 
@@ -69,12 +84,14 @@ export function ContentAnalytics() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="min-w-0">
-          <CardHeader><CardTitle className="text-sm">Which team gets the work</CardTitle></CardHeader>
-          <CardContent>
-            <DonutChart slices={mix} centerLabel="Requests" centerValue={String(overview.total)} />
-          </CardContent>
-        </Card>
+        {houses.length > 1 && (
+          <Card className="min-w-0">
+            <CardHeader><CardTitle className="text-sm">Which team gets the work</CardTitle></CardHeader>
+            <CardContent>
+              <DonutChart slices={mix} centerLabel="Requests" centerValue={String(overview.total)} />
+            </CardContent>
+          </Card>
+        )}
         <Card className="min-w-0">
           <CardHeader><CardTitle className="text-sm">Where everything stands</CardTitle></CardHeader>
           <CardContent>
@@ -90,6 +107,7 @@ export function ContentAnalytics() {
             <TableHeader>
               <TableRow>
                 <TableHead>Team</TableHead>
+                <TableHead>Manager</TableHead>
                 <TableHead className="text-right">Asked for</TableHead>
                 <TableHead className="text-right">Items</TableHead>
                 <TableHead className="text-right">Finished</TableHead>
@@ -103,6 +121,12 @@ export function ContentAnalytics() {
               {stats.map((s) => (
                 <TableRow key={s.department}>
                   <TableCell className="font-medium">{DEPARTMENT_LABEL[s.department]}</TableCell>
+                  <TableCell>
+                    <span className="flex items-center gap-2">
+                      <UserAvatar user={getContentManager(s.department)} size="sm" />
+                      {getContentManager(s.department).name}
+                    </span>
+                  </TableCell>
                   <TableCell className="text-right tabular-nums">{s.requested}</TableCell>
                   <TableCell className="text-right tabular-nums">{s.deliverablesRequested}</TableCell>
                   <TableCell className="text-right tabular-nums">{s.completed}</TableCell>
@@ -139,8 +163,7 @@ export function ContentAnalytics() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {contentUsers
-                .filter((u) => u.department)
+              {producers
                 .map((u) => {
                   const load = buildPersonLoad(rows, u.id, u.department as ContentDepartment, today);
                   return (
@@ -174,7 +197,7 @@ export function ContentAnalytics() {
               <TableRow>
                 <TableHead>Brand</TableHead>
                 <TableHead className="text-right">Asked for</TableHead>
-                {DEPARTMENTS.map((d) => (
+                {houses.map((d) => (
                   <TableHead key={d} className="text-right">{DEPARTMENT_LABEL[d]}</TableHead>
                 ))}
                 <TableHead className="text-right">Open</TableHead>
@@ -192,7 +215,7 @@ export function ContentAnalytics() {
                       </span>
                     </TableCell>
                     <TableCell className="text-right tabular-nums">{s.total}</TableCell>
-                    {DEPARTMENTS.map((d) => (
+                    {houses.map((d) => (
                       <TableCell key={d} className="text-right tabular-nums">{s.byDepartment[d]}</TableCell>
                     ))}
                     <TableCell className="text-right tabular-nums">{s.open}</TableCell>

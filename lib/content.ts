@@ -137,9 +137,9 @@ export function nextStepLine(request: ContentRequest, viewer?: User): string {
   const isRequester = viewer && request.requesterId === viewer.id;
   switch (request.status) {
     case "pending_assignment":
-      return viewer && isContentManager(viewer)
-        ? "Give this to someone on the team."
-        : "The content manager will give this to someone.";
+      return viewer && ownsQueue(viewer, request.department)
+        ? "Give this to someone in your team."
+        : `The ${DEPARTMENT_LABEL[request.department]} manager will give this to someone.`;
     case "in_production":
       return mine ? "You are working on this. Upload it when ready." : "The team is working on it.";
     case "in_review":
@@ -162,15 +162,28 @@ export function canRaiseRequest(user: User): boolean {
   return !isContentTeam(user);
 }
 
-/** Only the content manager hands work out. */
-export function canAssign(user: User): boolean {
-  return isContentManager(user);
+/**
+ * Each production house has its own manager, and a manager only hands out
+ * work inside their own house.
+ */
+export function canAssign(user: User, request: ContentRequest): boolean {
+  return isContentManager(user) && user.department === request.department;
 }
 
-/** A producer can pick up an unassigned job in their own department. */
+/** True when this person runs the house a request belongs to. */
+export function ownsQueue(user: User, department: ContentDepartment): boolean {
+  return isContentManager(user) && user.department === department;
+}
+
+/**
+ * A producer can pick up an unassigned job in their own house. Managers
+ * hand work out rather than taking it themselves.
+ */
 export function canPickUp(user: User, request: ContentRequest): boolean {
   return (
     request.status === "pending_assignment" &&
+    isContentTeam(user) &&
+    !isContentManager(user) &&
     user.department === request.department &&
     !request.assigneeId
   );
@@ -195,7 +208,7 @@ export function canComment(user: User, request: ContentRequest): boolean {
   return (
     request.requesterId === user.id ||
     request.assigneeId === user.id ||
-    isContentManager(user) ||
+    ownsQueue(user, request.department) ||
     isManager(user)
   );
 }
@@ -206,7 +219,9 @@ export function canComment(user: User, request: ContentRequest): boolean {
 
 /** Everything the user is allowed to see, newest first. */
 export function getVisibleRequests(user: User, requests: ContentRequest[]): ContentRequest[] {
-  if (isManager(user) || isContentManager(user)) return requests;
+  if (isManager(user)) return requests;
+  // A content manager runs one house and sees only that queue.
+  if (isContentManager(user)) return requests.filter((r) => r.department === user.department);
   if (isContentTeam(user)) {
     // Producers see their own jobs plus their department's open queue.
     return requests.filter(
@@ -222,7 +237,7 @@ export function getMyActions(user: User, requests: ContentRequest[]): ContentReq
     if (canReview(user, r)) return true;
     if (canSubmit(user, r)) return true;
     if (canPickUp(user, r)) return true;
-    if (isContentManager(user) && r.status === "pending_assignment") return true;
+    if (canAssign(user, r) && r.status === "pending_assignment") return true;
     return false;
   });
 }

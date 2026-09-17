@@ -56,8 +56,8 @@ export const ROLE_DEFINITIONS: RoleDefinition[] = [
     role: "content_manager",
     side: "content",
     label: "Content Manager",
-    description: "Runs all three content queues and hands work out.",
-    canSee: ["All 3 queues", "Give work to people", "Content reports", "Chat & Huddle"],
+    description: "Runs one production house: script, video or design. Hands work out to their team.",
+    canSee: ["My team's queue", "Give work to people", "My team's reports", "Chat & Huddle"],
     users: byRole("content_manager"),
   },
   {
